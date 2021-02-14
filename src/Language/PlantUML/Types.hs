@@ -38,10 +38,6 @@ data ArrowEnd = ArrowHead | ArrowTail
 data DefinedColor = Red | Blue | Yellow | Black | White
   deriving (Eq, Show, Enum, Bounded)
 
-colormap :: [(T.Text, DefinedColor)]
-colormap = map (\e -> (T.toLower . T.pack . show $ e, e)) $ enumFromTo minBound maxBound
---colormap = [("red", Red), ("blue", Blue), ("yellow", Yellow), ("black", Black), ("white", White)]
-
 data Color where
   Color :: DefinedColor -> Color
   HexColor :: T.Text -> Color  
@@ -88,8 +84,6 @@ data Declaration where
 -- As a result Box is defined specifically
 data GroupKind = Alt | Opt | Loop | Par | Break | Critical | Group
   deriving(Eq, Show, Enum, Bounded)
-groupingMap :: [(T.Text, GroupKind)]
-groupingMap = map (\e -> (T.toLower . T.pack . show $ e, e)) $ enumFromTo minBound maxBound
 
 data Grouping where
   -- Horizontal grouping provide optional grouping using else keyword,
@@ -98,21 +92,21 @@ data Grouping where
   Box :: [Declaration] -> [T.Text] -> Grouping
   deriving (Eq, Show)
 
+data HiddenItem = FootBox | Unlinked
+  deriving (Eq, Show, Enum, Bounded)
 
 data Command where
-  Activate :: Name -> Command  
-  Autonumber :: Maybe Int -> Maybe Int -> Maybe T.Text -> Command
+  Activate :: Name -> Command  -- implemented
+  Autonumber :: Maybe Integer -> Maybe Integer -> Maybe Integer -> Command -- implemented
   AutonumberStop :: Command
   AutonumberResume :: Maybe T.Text -> Command
   Deactivate :: Name -> Command
-  HideFootBox :: Command
-  HideUnlinked :: Command
+  Hide :: HiddenItem -> Command
   NewPage :: T.Text -> Command
   Title :: T.Text -> Command
   Divider :: T.Text -> Command
   VSpace :: Command
   deriving (Eq, Show)
-
 
 
 data SkinParameter where

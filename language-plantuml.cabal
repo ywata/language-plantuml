@@ -20,7 +20,7 @@ library
   exposed-modules:     Language.PlantUML.Types,
                        Language.PlantUML.Parser
   -- other-extensions:
-  build-depends:       base >=4.12 && <5, megaparsec, text
+  build-depends:       base >=4.12 && <5, hspec >= 2.7.4, megaparsec, text
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -34,11 +34,12 @@ test-suite parser-test
       
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      language-plantuml
-    , base >=4.7 && <5
-    , hspec >= 2.7.1
-    , megaparsec >= 8.0.0
-    , QuickCheck
-    , text
+                    language-plantuml
+                , QuickCheck
+                , base >=4.7 && <5
+                , hspec >= 2.7.1
+                , hspec >= 2.7.4
+                , megaparsec >= 8.0.0
+                , text
 
   default-language: Haskell2010  

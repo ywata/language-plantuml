@@ -11,7 +11,6 @@ import Language.PlantUML.Parser as P
 import Test.Hspec
 
 
-
 s1 :: MonadParsec Char T.Text m => m ()
 s1 = space1
 
@@ -56,13 +55,15 @@ spec = do
         `shouldBe` (Just Nothing)
 
     describe "pairParser" $ do
-      it "OK" $ parse (pairParser ("true", True)) "" "true" `shouldBe` (Right True)
-      it "fail" $ parseMaybe (pairParser ("true", True)) "True" `shouldBe` Nothing
+      it "OK" $ parse (pairParser ("true", pure True)) "" "true" `shouldBe` (Right True)
+      it "fail" $ parseMaybe (pairParser ("true", pure True)) "True" `shouldBe` Nothing
+      
     describe "assocParser" $ do
-      it "OK" $ parse (assocParser [("true", True), ("True", True)]) "" "true" `shouldBe` (Right True)
-      it "OK" $ parse (assocParser [("true", True), ("True", True)]) "" "True" `shouldBe` (Right True)
-      it "fail" $ parseMaybe (assocParser [("true", True), ("True", True)]) "False" `shouldBe` Nothing
-
+      it "1st match" $ parse (assocParser [("true", pure True), ("True", pure True)]) "" "true" `shouldBe` (Right True)
+      it "2nd match" $ parse (assocParser [("true", pure True), ("True", pure True)]) "" "True" `shouldBe` (Right True)
+      it "back track" $ parse (assocParser [("true", pure True), ("t", pure True)]) "" "t" `shouldBe` (Right True)
+      it "unknown" $ parseMaybe (assocParser [("true", pure True), ("True", pure True)]) "False" `shouldBe` Nothing      
+      it "should not match" $ parseMaybe (assocParser [("t", pure True)]) "true" `shouldBe` Nothing
 
     describe "color" $ do
       it "red" $ parse color "" "#red"
@@ -163,7 +164,15 @@ spec = do
                              [ArrowDef (Arrow (Just "B") "->" (Just "C") (Just [" B-> C"]))],
                              [ArrowDef (Arrow (Just "C") "->" (Just "D") (Just [" C -> D"]))]]))
       
-      
+    describe "command" $ do
+      it "autonumber" $ parse declCommand "" "autonumber" `shouldBe` (Right (Autonumber Nothing Nothing Nothing))
+      it "autonumber 10" $ parse declCommand "" "autonumber 10"
+        `shouldBe` (Right (Autonumber (Just 10) Nothing Nothing))      
+      it "autonumber 10 20" $ parse declCommand "" "autonumber 10 20"
+        `shouldBe` (Right (Autonumber (Just 10) (Just 20) ( Nothing)))
+                          
+      it "autonumber 10 20 30" $ parse declCommand "" "autonumber 10 20 30"
+        `shouldBe` (Right (Autonumber (Just 10) (Just 20) (Just 30)))     
     describe "uml" $ do
       it "@startuml and @enduml" $ parse plantUML "" "@startuml@enduml" `shouldBe` (Right (PlantUML []))
       it "@startuml and @enduml" $ parse plantUML "" "@startuml actor A @enduml"
@@ -172,12 +181,6 @@ spec = do
         `shouldBe` (Right (PlantUML [SubjectDef (Actor (Name "A") (Just "a")),
                                      ArrowDef (Arrow (Just "A") "->" (Just "B") (Just [" aaa"]))]))
 
---    describe "lookahead" $ do
---      it "lookahead" $ parse (lookAhead (string "end note")) "" ("end note"::String) `shouldBe` (Right ("end note"::String ))
 
-
-
-bools:: [(T.Text, Bool)]
-bools = [("true", True), ("false", False)]
 
 

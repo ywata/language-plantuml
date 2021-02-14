@@ -1,5 +1,5 @@
---{-# LANGUAGE RankNTypes #-}
---{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Language.PlantUML.Parser  where
@@ -105,22 +105,13 @@ declArrow = Arrow
 description:: MonadParsec Char T.Text m => m [T.Text]
 description = restOfLine
 
-----
-assocParser :: (Enum a, MonadParsec Char T.Text m) => [(T.Text, a)] -> m a
-assocParser = choice . map pairParser
-
-
-pairParser :: MonadParsec Char T.Text m => (T.Text, a) -> m a
-pairParser (txt, a) = id <$> lexeme (reserved txt) *> return a
-
-
 color ::  MonadParsec Char T.Text m => m Color
 color = lexeme $ try definedColor <|> try hexColor
   where
     hexColor :: MonadParsec Char T.Text m => m Color
     hexColor = HexColor . T.pack <$> (char '#' *> (many1 hexDigitChar))
     definedColor :: MonadParsec Char T.Text m => m Color    
-    definedColor = Color <$> (char '#' *> assocParser colormap)
+    definedColor = Color <$> (char '#' *> assocParser colorAssoc)
     
 
 reservedAs :: MonadParsec Char T.Text m => m (Maybe Alias)
@@ -179,7 +170,7 @@ endMarker endKey = T.append  "end " endKey
 -- Grouping things in Declaration allows us nested structure.
 declGrouping :: MonadParsec Char T.Text m => m Grouping
 declGrouping = do
-  groupKind <- assocParser groupingMap
+  groupKind <- assocParser groupingAssoc
   labels <- restOfLine -- double label temporary ignored due to difficulity
   go groupKind labels []
   where
@@ -197,12 +188,29 @@ doubleLabels :: MonadParsec Char T.Text m => m (T.Text, T.Text)
 doubleLabels = return ("not yet", "implemented")
 
 ----
---data Test where
---  T1 :: Test
---  T2 :: T.Text -> Test
+commandAssoc :: MonadParsec Char T.Text m => [(T.Text, m Command)]
+commandAssoc = [
+  ("activate", Activate <$> (Name <$> name)),
+  ("autonumber", 
+    Autonumber <$> optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) ),
+  ("deactivate", Deactivate <$> (Name <$> name))-- ,
+--  ("hide", Hide <$> assocParser hiddenItemAssoc )
+  ]
 
---commandParser :: MonadParsec Char T.Text m => forall a b. [(a -> b, m a)]
---commandParser = [(T1, _), (T2, _)]
+mkAssoc :: (Show a, Enum a, Bounded a, MonadParsec Char T.Text m) => [(T.Text, m a)]
+mkAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
+
+colorAssoc :: MonadParsec Char T.Text m => [(T.Text, m DefinedColor)]
+colorAssoc = mkAssoc
+
+groupingAssoc :: MonadParsec Char T.Text m => [(T.Text, m GroupKind)]
+groupingAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
+
+hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
+hiddenItemAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
+
+declCommand :: MonadParsec Char T.Text m => MonadParsec Char T.Text m => m Command
+declCommand = assocParser commandAssoc
 
 ----
 many1:: MonadParsec Char T.Text m => m a -> m [a]
@@ -219,7 +227,7 @@ reserved txt = do
 
 ident :: MonadParsec Char T.Text m => m T.Text
 ident = (\h t -> T.pack (h:t))
-        <$> (letterChar <|> char '@')
+        <$> printChar -- too weak?
         <*> many (alphaNumChar <|> char '_')
 
 nonQuotedName :: MonadParsec Char T.Text m => m T.Text
@@ -231,6 +239,13 @@ quotedName = T.pack <$> (char '"' >> manyTill L.charLiteral (char '"'))
 name :: MonadParsec Char T.Text m => m T.Text
 name = quotedName <|> nonQuotedName
 
+
+----
+assocParser :: (MonadParsec Char T.Text m) => [(T.Text, m a)] -> m a
+assocParser = choice . map pairParser
+
+pairParser :: MonadParsec Char T.Text m => (T.Text, m a) -> m a
+pairParser (txt, p) = lexeme (reserved txt) *> p
 
 
 ----
