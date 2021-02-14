@@ -20,6 +20,7 @@ instance IsString Alias where
   fromString = Alias . T.pack
 
 
+
 data Subject where
   Participant :: Name -> Maybe Alias -> Subject
   Actor       :: Name -> Maybe Alias -> Subject

@@ -18,7 +18,8 @@ build-type:          Simple
 
 library
   exposed-modules:     Language.PlantUML.Types,
-                       Language.PlantUML.Parser
+                       Language.PlantUML.Parser,
+                       Language.PlantUML.ParserHelper
   -- other-extensions:
   build-depends:       base >=4.12 && <5, hspec >= 2.7.4, megaparsec, text
   hs-source-dirs:      src

@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Language.PlantUML.ParserSpec where
+module Language.PlantUML.ParserHelperSpec where
 
 import qualified Data.Text as T
 import Text.Megaparsec
 import Text.Megaparsec.Char as C
 import Text.Megaparsec.Char.Lexer 
 import Language.PlantUML.Types
-import Language.PlantUML.Parser 
 import Test.Hspec
 
 import qualified Language.PlantUML.ParserHelper as P (assocParser, lexeme, name, nonQuotedName, pairParser, quotedName, reserved, restOfLine, spaceConsumer) 
