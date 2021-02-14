@@ -18,28 +18,6 @@ s1 = space1
 
 spec :: Spec
 spec = do
-    describe "nonQuotedName" $ do
-      it "alphabet" $ parseMaybe (P.nonQuotedName) "ab" `shouldBe` (Just "ab")
-      it "日本語" $ parseMaybe (P.nonQuotedName) "日本語" `shouldBe` (Just "日本語")
-      it "block comment" $ parseMaybe (P.nonQuotedName *> P.spaceConsumer *> P.nonQuotedName) "ab/' '/c" `shouldBe` (Just "c")
-      it "line comment" $ parseMaybe (P.nonQuotedName <* P.spaceConsumer) "ab'aaaaaa" `shouldBe` (Just "ab")          
-      it "failed case" $ parseMaybe (P.nonQuotedName) "\"abc\"" `shouldBe` Nothing
-
-    describe "quotedName" $ do
-      it "alphabet" $ parseMaybe P.quotedName "\"ab\"" `shouldBe` (Just "ab")
-      it "日本語" $ parseMaybe P.quotedName "\"日本語\"" `shouldBe` (Just "日本語")
-      it "block comment" $ parseMaybe P.quotedName "\"ab /' '/c\"" `shouldBe` (Just "ab /' '/c")
-      it "line comment" $ parseMaybe P.quotedName "\"ab 'aaaaaa\"" `shouldBe` (Just "ab 'aaaaaa")
-
-    describe "name" $ do
-      it "quoted"     $ parseMaybe P.name "\"ab\"" `shouldBe` (Just "ab")
-      it "non quoted" $ parseMaybe P.name "ab" `shouldBe` (Just "ab")
-
-    describe "reserved" $ do
-      it "accepts" $ parseMaybe (P.reserved "as") "as" `shouldBe` (Just "as")
-      it "accepts two P.reserved"  $ parse (P.reserved "as" *> P.spaceConsumer *> P.reserved "is") "" "as is" `shouldBe`(Right "is")
-      it "reject" $ parseMaybe (P.reserved "as") "asis" `shouldBe` Nothing
-      
     describe "reservedAs" $ do
       it "use alias" $ parse reservedAs "" "as abc" `shouldBe` (Right (Just (Alias "abc")))
       it "no alias" $ parseMaybe reservedAs "as" `shouldBe` Nothing
@@ -55,17 +33,6 @@ spec = do
         `shouldBe` (Right "string")
       it "empty" $ parseMaybe (try (P.spaceConsumer *> reservedAs)) " "
         `shouldBe` (Just Nothing)
-
-    describe "P.pairParser" $ do
-      it "OK" $ parse (P.pairParser ("true", pure True)) "" "true" `shouldBe` (Right True)
-      it "fail" $ parseMaybe (P.pairParser ("true", pure True)) "True" `shouldBe` Nothing
-      
-    describe "P.assocParser" $ do
-      it "1st match" $ parse (P.assocParser [("true", pure True), ("True", pure True)]) "" "true" `shouldBe` (Right True)
-      it "2nd match" $ parse (P.assocParser [("true", pure True), ("True", pure True)]) "" "True" `shouldBe` (Right True)
-      it "back track" $ parse (P.assocParser [("true", pure True), ("t", pure True)]) "" "t" `shouldBe` (Right True)
-      it "unknown" $ parseMaybe (P.assocParser [("true", pure True), ("True", pure True)]) "False" `shouldBe` Nothing      
-      it "should not match" $ parseMaybe (P.assocParser [("t", pure True)]) "true" `shouldBe` Nothing
 
     describe "color" $ do
       it "red" $ parse color "" "#red"
@@ -129,11 +96,7 @@ spec = do
         `shouldBe` (Right (NoteOver "A" Nothing ["A B"]))
       it "note over twolines 2" $ parse declNotes "" ("note over A, B of\nA B\nend note\n")
         `shouldBe` (Right (NoteOver "A" (Just "B") ["A B"]))
-    describe "restOfLine" $ do
-      it "no continuation line" $ do
-        parse P.restOfLine "" "group\n" `shouldBe` (Right ["group"])
-      it "1 continuation line" $ do
-        parse P.restOfLine "" "group\\\nasdf\n" `shouldBe` (Right ["group\\", "asdf"])
+
 {-        
     describe "doubleLabels" $ do
       it "one label" $ do
