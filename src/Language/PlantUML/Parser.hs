@@ -43,8 +43,11 @@ decls :: MonadParsec Char T.Text m => m Declaration
 decls = (SubjectDef <$> declSubject)
       <|> (ArrowDef <$> declArrow)
       <|> (NotesDef <$> declNotes)
---      <|> (GroupingDef <$> declGrouping)
+      <|> (GroupingDef <$> declGrouping)
+      <|> (CommandDef <$> declCommand)
 
+stereotype :: (MonadParsec Char T.Text m) => m a -> m (Stereotype a)
+stereotype p = Stereotype <$> between (symbol "<<") (symbol ">>") (lexeme p)
 
 declSubject :: MonadParsec Char T.Text m => m Subject
 declSubject = alt $ map pa [(Participant, "participant")
@@ -60,9 +63,11 @@ declSubject = alt $ map pa [(Participant, "participant")
     alt [] = empty
     alt (x : xs) = x <|> alt xs
     pa (f, txt) = do
-      n <- Name <$> ((lexeme $ reserved txt) *> name)
-      a <- (spaceConsumer *> reservedAs) <|> pure Nothing
-      return (f n a)
+      n <- Name <$> ((lexeme $ reserved txt) *> lexeme name)
+      a <- reservedAs
+      o <- optional (lexeme (reserved "order") >> lexeme L.decimal)
+      c <- optional (lexeme color)
+      return (f n a o c)
 
 
 --- Arrows
@@ -90,17 +95,20 @@ arrows = sortBy order $ map (\(a,b,c,d,e) -> a ++ b++ c++ d++e) $
 parrows :: MonadParsec Char T.Text m => [m T.Text]
 parrows = map string $ map T.pack arrows
 declArrow :: MonadParsec Char T.Text m => m Arrow
-declArrow = Arrow
+declArrow = try (Arrow
             <$> optional (lexeme name)
             <*> (lexeme (choice parrows))
             <*> optional (lexeme name)
-            <*> optional (lexeme $ (char ':') *> description)
+            <*> optional (lexeme $ (char ':') *> description))
+            <|>
+            try (Return <$> (lexeme $reserved "return" *> restOfLine))
+
 
 description:: MonadParsec Char T.Text m => m [T.Text]
 description = restOfLine
 
 color ::  MonadParsec Char T.Text m => m Color
-color = lexeme $ try definedColor <|> try hexColor
+color = try definedColor <|> try hexColor
   where
     hexColor :: MonadParsec Char T.Text m => m Color
     hexColor = HexColor . T.pack <$> (char '#' *> (many1 hexDigitChar))
@@ -112,7 +120,7 @@ colorAssoc = mkAssoc
     
 
 reservedAs :: MonadParsec Char T.Text m => m (Maybe Alias)
-reservedAs = optional (Alias <$> (lexeme (reserved "as") *> nonQuotedName))
+reservedAs = optional (Alias <$> (lexeme (reserved "as") *> lexeme nonQuotedName))
 
 
 ---- Notes
@@ -183,15 +191,62 @@ declCommand :: MonadParsec Char T.Text m => MonadParsec Char T.Text m => m Comma
 declCommand = assocParser commandAssoc
 
 hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
-hiddenItemAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
+hiddenItemAssoc = mkAssoc
+
+onOffAssoc :: MonadParsec Char T.Text m => [(T.Text, m OnOff)]
+onOffAssoc = mkAssoc
 
 commandAssoc :: MonadParsec Char T.Text m => [(T.Text, m Command)]
 commandAssoc = [
-  ("activate", Activate <$> (Name <$> name)),
+  ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
     Autonumber <$> optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) ),
-  ("deactivate", Deactivate <$> (Name <$> name))-- ,
---  ("hide", Hide <$> assocParser hiddenItemAssoc )
+  ("hide", Hide <$> assocParser hiddenItemAssoc ),
+  ("activate", Activate <$> (Name <$> name)),
+  ("deactivate", Deactivate <$> (Name <$> name)),
+  ("hide", Hide <$> assocParser hiddenItemAssoc ),
+  ("title", Title <$> restOfLine)
+  ]
+
+boolAssoc :: MonadParsec Char T.Text m => [(T.Text, m Bool)]
+boolAssoc = mkAssoc
+lifelineStrategyTypeAssoc :: MonadParsec Char T.Text m => [(T.Text, m LifelineStrategyType)]
+lifelineStrategyTypeAssoc = mkAssoc
+styleTypeAssoc :: MonadParsec Char T.Text m => [(T.Text, m StyleType)]
+styleTypeAssoc = mkAssoc
+sequenceParticipantTypeAssoc :: MonadParsec Char T.Text m => [(T.Text, m SequenceParticipantType)]
+sequenceParticipantTypeAssoc = mkAssoc
+
+skinParamParser :: MonadParsec Char T.Text m => m Command
+skinParamParser = SkinParameter . (:[]) <$> (reserved "skinparam" *> assocParser skinParamAssoc)
+
+skinParamAssoc :: MonadParsec Char T.Text m => [(T.Text, m SkinParam)]
+skinParamAssoc = [
+    ("responseMessageBelowArrow", ResponseMessageBelowArrow <$> assocParser boolAssoc),
+    ("maxMessageSize", MaxMessageSize <$> lexeme L.decimal),
+    ("guillment", Guillment <$> assocParser boolAssoc),
+    ("sequenceArrowThickness",  SequenceArrowThickness <$> lexeme L.decimal),
+    ("roundCorner", RoundCorner <$> lexeme L.decimal),
+    ("sequenceParticipant", SequenceParticipant <$> assocParser sequenceParticipantTypeAssoc),
+    ("backgroundColor", BackgroundColor <$> lexeme color),
+    ("handwritten", Handwritten <$> assocParser boolAssoc),
+    ("participantPadding", ParticipantPadding <$> lexeme L.decimal),
+    ("boxPadding", BoxPadding <$> lexeme L.decimal),
+    ("lifelineStrategy", LifelineStrategy <$> assocParser lifelineStrategyTypeAssoc),
+    ("style", Style <$> assocParser styleTypeAssoc),
+    ("arrowColor", ArrowColor <$> lexeme color),
+    ("actorBorderColor", ActorBorderColor <$> lexeme color),
+    ("lifeLineBorderColor", LifeLineBorderColor <$> lexeme color),
+    ("lifeLineBackgroundColor", LifeLineBackgroundColor <$> lexeme color),
+    ("participantBorderColor", ParticipantBorderColor <$> lexeme color),
+    ("participantBackgroundColor", ParticipantBackgroundColor <$> lexeme color),
+--    ("participantFontName", ParticipantFontName <$> lexame string),
+    ("participantFontSize", ParticipantFontSize <$> lexeme L.decimal),
+    ("participantFontColor", ParticipantFontColor <$> lexeme color),
+    ("actorBackgroundColor", ActorBackgroundColor <$> lexeme color),
+    ("actorFontColor", ActorFontColor <$> lexeme color),
+    ("actorFontSize", ActorFontSize <$> lexeme L.decimal)
+--    ("actorFontName", ActorFontName <$> lexeme color)
   ]
 
 

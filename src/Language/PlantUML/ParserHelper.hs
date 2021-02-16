@@ -13,6 +13,9 @@ spaceConsumer = L.space space1 (L.skipLineComment "'") (L.skipBlockComment "/'" 
 lexeme :: MonadParsec Char T.Text m => m a -> m a
 lexeme  = L.lexeme spaceConsumer
 
+symbol :: MonadParsec Char T.Text m => T.Text -> m T.Text
+symbol  = L.symbol spaceConsumer
+
 mkAssoc :: (Show a, Enum a, Bounded a, MonadParsec Char T.Text m) => [(T.Text, m a)]
 mkAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
 
@@ -27,14 +30,14 @@ many1 p = do
 ----
 ident :: MonadParsec Char T.Text m => m T.Text
 ident = (\h t -> T.pack (h:t))
-        <$> printChar -- too weak?
+        <$> (letterChar <|> char '@') -- should be alphabet only
         <*> many (alphaNumChar <|> char '_')
 
 nonQuotedName :: MonadParsec Char T.Text m => m T.Text
-nonQuotedName = T.pack <$> many1 letterChar
+nonQuotedName = T.pack <$> many1 (letterChar <|> digitChar)
 
 quotedName :: MonadParsec Char T.Text m => m T.Text
-quotedName = T.pack <$> (char '"' >> manyTill L.charLiteral (char '"'))
+quotedName = T.pack <$> (char '"' >> manyTill printChar (char '"'))
 
 name :: MonadParsec Char T.Text m => m T.Text
 name = quotedName <|> nonQuotedName
@@ -45,10 +48,9 @@ reserved txt = do
   n <- lookAhead ident
   if n == txt then ident else empty
 
-
 ----
 assocParser :: (MonadParsec Char T.Text m) => [(T.Text, m a)] -> m a
-assocParser = choice . map pairParser
+assocParser = lexeme . choice . map pairParser
 
 pairParser :: MonadParsec Char T.Text m => (T.Text, m a) -> m a
 pairParser (txt, p) = lexeme (reserved txt) *> p

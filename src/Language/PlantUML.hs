@@ -14,6 +14,7 @@ module Language.PlantUML
   , Grouping(..)
   , HiddenItem(..)
   , Command(..)
+  , Notes(..)
   )
 where
 

@@ -4,11 +4,25 @@ module Language.PlantUML.ParserSpec where
 
 import qualified Data.Text as T
 import Text.Megaparsec
-import Text.Megaparsec.Char as C
-import Text.Megaparsec.Char.Lexer 
+    ( parse, parseMaybe, choice, MonadParsec(try), manyTill, notFollowedBy, lookAhead)
+import Text.Megaparsec.Char as C ( space1, string, printChar )
+import Text.Megaparsec.Char.Lexer () 
 import Language.PlantUML.Types
-import Language.PlantUML.Parser 
-import Test.Hspec
+
+import Language.PlantUML.Parser
+    ( plantUML,
+      declSubject,
+      parrows,
+      declArrow,
+      description,
+      color,
+      reservedAs,
+      declNotes,
+      declGrouping,
+      declCommand,
+      stereotype)
+
+import Test.Hspec ( describe, it, shouldBe, Spec )
 
 import qualified Language.PlantUML.ParserHelper as P (assocParser, lexeme, name, nonQuotedName, pairParser, quotedName, reserved, restOfLine, spaceConsumer) 
 
@@ -33,6 +47,8 @@ spec = do
         `shouldBe` (Right "string")
       it "empty" $ parseMaybe (try (P.spaceConsumer *> reservedAs)) " "
         `shouldBe` (Just Nothing)
+      it "Foo1" $ parse (reservedAs) "" "as Foo1"
+        `shouldBe` (Right (Just (Alias "Foo1")))
 
     describe "color" $ do
       it "red" $ parse color "" "#red"
@@ -42,26 +58,44 @@ spec = do
 
     describe "declSubject" $ do
       it "participant w/o alias" $ parse declSubject "" "participant abc"
-        `shouldBe` (Right (Participant (Name "abc") Nothing))
+        `shouldBe` (Right (Participant (Name "abc") Nothing Nothing Nothing))
       it "participant w alias" $ parse declSubject "" ("participant abc as a")
-        `shouldBe` (Right (Participant (Name "abc") (Just (Alias "a"))))
+        `shouldBe` (Right (Participant (Name "abc") (Just (Alias "a")) Nothing Nothing))
       -- more variation
       it "actor w/o alias" $ parse declSubject "" "actor abc"
-        `shouldBe` (Right (Actor (Name "abc") Nothing))
+        `shouldBe` (Right (Actor (Name "abc") Nothing Nothing Nothing))
       it "boundary w/o alias" $ parse declSubject "" "boundary abc"
-        `shouldBe` (Right (Boundary (Name "abc") Nothing))
+        `shouldBe` (Right (Boundary (Name "abc") Nothing Nothing Nothing))
       it "control w/o alias" $ parse declSubject "" "control abc"
-        `shouldBe` (Right (Control (Name "abc") Nothing))
+        `shouldBe` (Right (Control (Name "abc") Nothing Nothing Nothing))
       it "entity w/o alias" $ parse declSubject "" "entity abc"
-        `shouldBe` (Right (Entity (Name "abc") Nothing))
+        `shouldBe` (Right (Entity (Name "abc") Nothing Nothing Nothing))
       it "database w/o alias" $ parse declSubject "" "database abc"
-        `shouldBe` (Right (Database (Name "abc") Nothing))
+        `shouldBe` (Right (Database (Name "abc") Nothing Nothing Nothing))
       it "database w/o alias" $ parse declSubject "" "database abc"
-        `shouldBe` (Right (Database (Name "abc") Nothing))
+        `shouldBe` (Right (Database (Name "abc") Nothing Nothing Nothing))
       it "collections w/o alias" $ parse declSubject "" "collections abc"
-        `shouldBe` (Right (Collections (Name "abc") Nothing))
+        `shouldBe` (Right (Collections (Name "abc") Nothing Nothing Nothing))
       it "queue w/o alias" $ parse declSubject "" "queue abc"
-        `shouldBe` (Right (Queue (Name "abc") Nothing))
+        `shouldBe` (Right (Queue (Name "abc") Nothing Nothing Nothing))
+      it "consective actors" $ parse declSubject "" "participant participant as Foo \nactor actor as Foo1"
+        `shouldBe` (Right (Participant (Name "participant") (Just "Foo") Nothing Nothing))
+        
+      it "actor with order" $ parse declSubject "" "actor A order 10"
+        `shouldBe` (Right (Actor (Name "A") Nothing (Just 10) Nothing))
+      it "actor with color" $ parse declSubject "" "actor A #red"
+        `shouldBe` (Right (Actor (Name "A") Nothing Nothing (Just (Color Red))))
+      it "actor with color and order" $ parse declSubject "" "actor A order 10 #red"
+        `shouldBe` (Right (Actor (Name "A") Nothing (Just 10) (Just (Color Red))))
+      it "actor with alias, color and color" $ parse declSubject "" "actor A as Foo2 order 10 #red"
+        `shouldBe` (Right (Actor (Name "A") (Just "Foo2") (Just 10) (Just (Color Red))))
+
+    describe "stereotype" $ do
+      it "one line" $ parse (stereotype (manyTill printChar (notFollowedBy (string ">>")))) "" "<<one>>>>>>"
+        `shouldBe` (Right (Stereotype "one"))
+--      it "multiple lines" $ parse (stereotype (P.nonQuotedName)) ""
+--        "<<line\\\n> break stereotype>" `shouldBe` (Right (Stereotype "line break stereotype"))      
+
 
     describe "arrow1" $ do
       it "arrow" $ parse (choice parrows) "" "->" `shouldBe` (Right "->")
@@ -77,6 +111,16 @@ spec = do
         `shouldBe` (Right (Arrow Nothing "->" (Just "B") (Just [" a b c"])))
       it "A->" $ parse declArrow "" "A -> : a b c\n"
         `shouldBe` (Right (Arrow (Just "A") "->" Nothing (Just [" a b c"])))
+      it "Bob()" $ parse declArrow "" "Alice -> \"Bob()\" : Hello\n"
+        `shouldBe` (Right (Arrow (Just "Alice") "->" (Just "Bob()") (Just [" Hello"])))
+      it "Long" $ parse declArrow "" "\"Bob()\" -> Long as \"This is very\nlong\"\n"
+        `shouldBe` (Right (Arrow (Just "Bob()") "-->" (Just "Long") (Just ["This is very\nlong"])))
+      it "Bob()2" $ parse declArrow "" "Long --> \"Bob()\" : ok\n"
+        `shouldBe` (Right (Arrow (Just "Long") "-->" (Just "Bob()") (Just [" ok"])))
+    describe "return" $ do
+      it "return" $ parse declArrow "" "return\n" `shouldBe` (Right (Return [""]))
+    describe "return" $ do
+      it "return" $ parse declArrow "" "return   statement\n" `shouldBe` (Right (Return ["   statement"]))
 
     describe "description" $ do
       it "one line" $ parse description "" "abc\n" `shouldBe` (Right ["abc"])
@@ -138,12 +182,23 @@ spec = do
                           
       it "autonumber 10 20 30" $ parse declCommand "" "autonumber 10 20 30"
         `shouldBe` (Right (Autonumber (Just 10) (Just 20) (Just 30)))     
+      it "autoactivate On" $ parse declCommand "" "autoactivate on" `shouldBe` (Right (AutoActivate On))
+      it "autoactivate Off" $ parse declCommand "" "autoactivate off" `shouldBe` (Right (AutoActivate Off))
+      it "activate" $ parse declCommand "" "activate A" `shouldBe` (Right (Activate (Name "A")))
+      it "deactivate" $ parse declCommand "" "deactivate B" `shouldBe` (Right (Deactivate (Name "B")))
+      it "title" $ parse declCommand "" "title A\n" `shouldBe` (Right (Title ["A"]))
+      it "title" $ parse declCommand "" "title A\\a\n" `shouldBe` (Right (Title ["A\\a"]))
+      it "title" $ parseMaybe declCommand "title A" `shouldBe` Nothing
+
+--    describe "declCommand" $ do
+--       it "" $ parse plantUML "" "activate A" `shouldBe` (Right (PlantUML [CommandDef (Autonumber Nothing Nothing Nothing)]))
+
     describe "uml" $ do
       it "@startuml and @enduml" $ parse plantUML "" "@startuml@enduml" `shouldBe` (Right (PlantUML []))
       it "@startuml and @enduml" $ parse plantUML "" "@startuml actor A @enduml"
-        `shouldBe` (Right (PlantUML [SubjectDef (Actor (Name "A") Nothing)]))
+        `shouldBe` (Right (PlantUML [SubjectDef (Actor (Name "A") Nothing Nothing Nothing)]))
       it "@startuml and @enduml" $ parse plantUML "" "@startuml actor A as a A -> B : aaa\n@enduml"
-        `shouldBe` (Right (PlantUML [SubjectDef (Actor (Name "A") (Just "a")),
+        `shouldBe` (Right (PlantUML [SubjectDef (Actor (Name "A") (Just "a") Nothing Nothing),
                                      ArrowDef (Arrow (Just "A") "->" (Just "B") (Just [" aaa"]))]))
 
 

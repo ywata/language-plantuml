@@ -38,6 +38,7 @@ spec = do
       it "accepts" $ parseMaybe (P.reserved "as") "as" `shouldBe` (Just "as")
       it "accepts two P.reserved"  $ parse (P.reserved "as" *> P.spaceConsumer *> P.reserved "is") "" "as is" `shouldBe`(Right "is")
       it "reject" $ parseMaybe (P.reserved "as") "asis" `shouldBe` Nothing
+
       
     describe "P.pairParser" $ do
       it "OK" $ parse (P.pairParser ("true", pure True)) "" "true" `shouldBe` (Right True)

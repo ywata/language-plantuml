@@ -20,16 +20,17 @@ instance IsString Alias where
   fromString = Alias . T.pack
 
 
+type Order = Integer
 
 data Subject where
-  Participant :: Name -> Maybe Alias -> Subject
-  Actor       :: Name -> Maybe Alias -> Subject
-  Boundary    :: Name -> Maybe Alias -> Subject
-  Control     :: Name -> Maybe Alias -> Subject
-  Entity      :: Name -> Maybe Alias -> Subject
-  Database    :: Name -> Maybe Alias -> Subject
-  Collections :: Name -> Maybe Alias -> Subject
-  Queue       :: Name -> Maybe Alias -> Subject
+  Participant :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Actor       :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Boundary    :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Control     :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Entity      :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Database    :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Collections :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Queue       :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
   deriving (Eq, Show)
 
 
@@ -46,6 +47,7 @@ data Color where
 
 data Arrow where
   Arrow ::  Maybe T.Text -> T.Text -> Maybe T.Text -> Maybe [T.Text] -> Arrow
+  Return :: [T.Text] -> Arrow
   deriving (Eq, Show)
 
 data Notes where
@@ -62,6 +64,9 @@ data Declaration where
   CommandDef    :: Command    -> Declaration
   deriving (Eq, Show)
 
+data Stereotype a where
+  Stereotype :: a -> Stereotype a
+  deriving (Eq, Show)
 
 --data Box where
 --  Box :: T.Text -> Maybe Color -> [Declaration] -> Box
@@ -96,48 +101,64 @@ data Grouping where
 data HiddenItem = FootBox | Unlinked
   deriving (Eq, Show, Enum, Bounded)
 
+data OnOff = On | Off
+  deriving (Eq, Show, Enum, Bounded)
+
+data StopResume = Stop | Resume
+  deriving (Eq, Show, Enum, Bounded)
+
 data Command where
   Activate :: Name -> Command  -- implemented
+  AutoActivate :: OnOff -> Command
   Autonumber :: Maybe Integer -> Maybe Integer -> Maybe Integer -> Command -- implemented
-  AutonumberStop :: Command
-  AutonumberResume :: Maybe T.Text -> Command
+--  Autonumber :: Command
+--  Autonumber :: Maybe T.Text -> Command
   Deactivate :: Name -> Command
   Hide :: HiddenItem -> Command
   NewPage :: T.Text -> Command
-  Title :: T.Text -> Command
+  Title :: [T.Text] -> Command
   Divider :: T.Text -> Command
   VSpace :: Command
+  SkinParameter :: [SkinParam] -> Command
   deriving (Eq, Show)
 
 
-data SkinParameter where
-  ResponseMessageBelowArrow :: Bool -> SkinParameter
-  MaxMessageSize :: Int -> SkinParameter
-  Guillment :: Bool -> SkinParameter
-  SequenceArrowThickness :: Int -> SkinParameter
-  RoundCorner :: Int -> SkinParameter
-  SequenceParticipant :: T.Text -> SkinParameter
-  BackgroundColor :: Color -> SkinParameter
-  Handwritten :: Bool -> SkinParameter
-  ParticipantPadding :: Int -> SkinParameter
-  BoxPadding :: Int -> SkinParameter
-  LifelineStrategy :: T.Text -> SkinParameter
-  Style :: T.Text -> SkinParameter
+data LifelineStrategyType = Solid | Dash
+  deriving (Eq, Show, Enum, Bounded)
+data StyleType = StrictUML
+  deriving (Eq, Show, Enum, Bounded)
+data SequenceParticipantType = Underline
+  deriving (Eq, Show, Enum, Bounded)
+
+
+data SkinParam where
+  ResponseMessageBelowArrow :: Bool -> SkinParam
+  MaxMessageSize :: Int -> SkinParam
+  Guillment :: Bool -> SkinParam
+  SequenceArrowThickness :: Int -> SkinParam
+  RoundCorner :: Int -> SkinParam
+  SequenceParticipant :: SequenceParticipantType -> SkinParam
+  BackgroundColor :: Color -> SkinParam
+  Handwritten :: Bool -> SkinParam
+  ParticipantPadding :: Int -> SkinParam
+  BoxPadding :: Int -> SkinParam
+  LifelineStrategy :: LifelineStrategyType -> SkinParam
+  Style :: StyleType -> SkinParam
 
   -- Sequence diagram specific skin parameter
-  ArrowColor :: Color -> SkinParameter
-  ActorBorderColor :: Color -> SkinParameter
-  LifeLineBorderColor :: Color -> SkinParameter
-  LifeLineBackgroundColor :: Color -> SkinParameter
+  ArrowColor :: Color -> SkinParam
+  ActorBorderColor :: Color -> SkinParam
+  LifeLineBorderColor :: Color -> SkinParam
+  LifeLineBackgroundColor :: Color -> SkinParam
 
-  ParticipantBorderColor :: Color -> SkinParameter
-  ParticipantBackgroundColor :: Color -> SkinParameter
-  ParticipantFontName :: T.Text -> SkinParameter
-  ParticipantFontSize :: Int -> SkinParameter
-  ParticipantFontColor :: Color -> SkinParameter
+  ParticipantBorderColor :: Color -> SkinParam
+  ParticipantBackgroundColor :: Color -> SkinParam
+  ParticipantFontName :: T.Text -> SkinParam
+  ParticipantFontSize :: Int -> SkinParam
+  ParticipantFontColor :: Color -> SkinParam
 
-  ActorBackgroundColor :: Color -> SkinParameter
-  ActorFontColor :: Color -> SkinParameter
-  ActorFontSize :: Int -> SkinParameter
-  ActorFontName :: T.Text -> SkinParameter
-  
+  ActorBackgroundColor :: Color -> SkinParam
+  ActorFontColor :: Color -> SkinParam
+  ActorFontSize :: Int -> SkinParam
+  ActorFontName :: T.Text -> SkinParam
+  deriving (Eq, Show)
