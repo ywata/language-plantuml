@@ -9,7 +9,7 @@ import Text.Megaparsec.Char.Lexer
 import Language.PlantUML.Types
 import Test.Hspec
 
-import qualified Language.PlantUML.ParserHelper as P (assocParser, lexeme, name, nonQuotedName, pairParser, quotedName, reserved, restOfLine, spaceConsumer) 
+import qualified Language.PlantUML.ParserHelper as P (assocParser, lexeme, name, nonQuotedName, pairParser, quotedName, reserved, reservedSymbol, restOfLine, spaceConsumer) 
 
 
 s1 :: MonadParsec Char T.Text m => m ()
@@ -38,6 +38,9 @@ spec = do
       it "accepts" $ parseMaybe (P.reserved "as") "as" `shouldBe` (Just "as")
       it "accepts two P.reserved"  $ parse (P.reserved "as" *> P.spaceConsumer *> P.reserved "is") "" "as is" `shouldBe`(Right "is")
       it "reject" $ parseMaybe (P.reserved "as") "asis" `shouldBe` Nothing
+    describe "reservedSymbol" $ do
+      it "accepts" $ parse (P.reservedSymbol "...") "" "..." `shouldBe` (Right "...")
+      it "reject" $ parseMaybe (P.reservedSymbol "...") "...." `shouldBe` Nothing
 
       
     describe "P.pairParser" $ do

@@ -20,6 +20,8 @@ import Language.PlantUML.Parser
       declNotes,
       declGrouping,
       declCommand,
+      skinParamAssoc,
+      skinParamParser,
       stereotype)
 
 import Test.Hspec ( describe, it, shouldBe, Spec )
@@ -27,8 +29,8 @@ import Test.Hspec ( describe, it, shouldBe, Spec )
 import qualified Language.PlantUML.ParserHelper as P (assocParser, lexeme, name, nonQuotedName, pairParser, quotedName, reserved, restOfLine, spaceConsumer) 
 
 
-s1 :: MonadParsec Char T.Text m => m ()
-s1 = space1
+--s1 :: MonadParsec Char T.Text m => m ()
+--s1 = space1
 
 spec :: Spec
 spec = do
@@ -91,8 +93,8 @@ spec = do
         `shouldBe` (Right (Actor (Name "A") (Just "Foo2") (Just 10) (Just (Color Red))))
 
     describe "stereotype" $ do
-      it "one line" $ parse (stereotype (manyTill printChar (notFollowedBy (string ">>")))) "" "<<one>>>>>>"
-        `shouldBe` (Right (Stereotype "one"))
+      it "one line" $ parse (stereotype (manyTill printChar (string ">>"))) "" "<<one>>>>"
+        `shouldBe` (Right (Stereotype ["one>>>>"]))
 --      it "multiple lines" $ parse (stereotype (P.nonQuotedName)) ""
 --        "<<line\\\n> break stereotype>" `shouldBe` (Right (Stereotype "line break stereotype"))      
 
@@ -172,7 +174,7 @@ spec = do
                             [[ArrowDef (Arrow (Just "A") "->" (Just "B") (Just [" A -> B"]))],
                              [ArrowDef (Arrow (Just "B") "->" (Just "C") (Just [" B-> C"]))],
                              [ArrowDef (Arrow (Just "C") "->" (Just "D") (Just [" C -> D"]))]]))
-      
+
     describe "command" $ do
       it "autonumber" $ parse declCommand "" "autonumber" `shouldBe` (Right (Autonumber Nothing Nothing Nothing))
       it "autonumber 10" $ parse declCommand "" "autonumber 10"
@@ -184,11 +186,26 @@ spec = do
         `shouldBe` (Right (Autonumber (Just 10) (Just 20) (Just 30)))     
       it "autoactivate On" $ parse declCommand "" "autoactivate on" `shouldBe` (Right (AutoActivate On))
       it "autoactivate Off" $ parse declCommand "" "autoactivate off" `shouldBe` (Right (AutoActivate Off))
-      it "activate" $ parse declCommand "" "activate A" `shouldBe` (Right (Activate (Name "A")))
+      it "activate" $ parse declCommand "" "activate A" `shouldBe` (Right (Activate (Name "A") Nothing))
       it "deactivate" $ parse declCommand "" "deactivate B" `shouldBe` (Right (Deactivate (Name "B")))
       it "title" $ parse declCommand "" "title A\n" `shouldBe` (Right (Title ["A"]))
       it "title" $ parse declCommand "" "title A\\a\n" `shouldBe` (Right (Title ["A\\a"]))
       it "title" $ parseMaybe declCommand "title A" `shouldBe` Nothing
+
+    describe "skin parameters" $ do
+      it "responseMessageBelowArrow" $
+        parse (P.assocParser skinParamAssoc) "" "responseMessageBelowArrow true"
+        `shouldBe` (Right (ResponseMessageBelowArrow True))
+        
+      it "skinparam responseMessageBelowArrow true" $
+        parse skinParamParser "" "skinparam responseMessageBelowArrow true"
+        `shouldBe` (Right (SkinParameter [ResponseMessageBelowArrow True]))
+      it "skinparam responseMessageBelowArrow false" $
+        parse skinParamParser "" "skinparam responseMessageBelowArrow false"
+        `shouldBe` (Right (SkinParameter [ResponseMessageBelowArrow False]))
+      it "skinparam maxMessageSize" $
+        parse skinParamParser "" "skinparam maxMessageSize 10"
+        `shouldBe` (Right (SkinParameter [MaxMessageSize 10]))
 
 --    describe "declCommand" $ do
 --       it "" $ parse plantUML "" "activate A" `shouldBe` (Right (PlantUML [CommandDef (Autonumber Nothing Nothing Nothing)]))

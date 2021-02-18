@@ -45,9 +45,16 @@ decls = (SubjectDef <$> declSubject)
       <|> (NotesDef <$> declNotes)
       <|> (GroupingDef <$> declGrouping)
       <|> (CommandDef <$> declCommand)
+        
 
-stereotype :: (MonadParsec Char T.Text m) => m a -> m (Stereotype a)
-stereotype p = Stereotype <$> between (symbol "<<") (symbol ">>") (lexeme p)
+stereotype :: (MonadParsec Char T.Text m) => m a -> m (Stereotype [a])
+stereotype p = do
+  f <- string "<<"
+  g <- manyTill p (notFollowedBy (string ">>"))
+  return $ Stereotype g
+
+
+  
 
 declSubject :: MonadParsec Char T.Text m => m Subject
 declSubject = alt $ map pa [(Participant, "participant")
@@ -185,10 +192,9 @@ doubleLabels = return ("not yet", "implemented")
 groupingAssoc :: MonadParsec Char T.Text m => [(T.Text, m GroupKind)]
 groupingAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
 
-
 ---- Commands
 declCommand :: MonadParsec Char T.Text m => MonadParsec Char T.Text m => m Command
-declCommand = assocParser commandAssoc
+declCommand = assocParser commandAssoc <|> delayParser <|> skinParamParser
 
 hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
 hiddenItemAssoc = mkAssoc
@@ -198,15 +204,33 @@ onOffAssoc = mkAssoc
 
 commandAssoc :: MonadParsec Char T.Text m => [(T.Text, m Command)]
 commandAssoc = [
+  ("activate", Activate <$> (Name <$> name) <*> optional (lexeme color)),
   ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
     Autonumber <$> optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) ),
+  ("create", Create <$> (Name <$> name)),
+  ("destroy", Destroy <$> (Name <$> name)),
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
-  ("activate", Activate <$> (Name <$> name)),
+
   ("deactivate", Deactivate <$> (Name <$> name)),
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
   ("title", Title <$> restOfLine)
   ]
+
+delayParser :: MonadParsec Char T.Text m => m Command
+delayParser = do
+  reservedSymbol "..."
+  ls <- lookAhead restOfLine
+  let txt = parseMaybe ptxt (T.concat ls)
+  case txt of
+    Just t -> do
+      _ <- restOfLine
+      return $ Delay (Just t)
+    _ -> return $ Delay Nothing
+  where
+    ptxt :: MonadParsec Char T.Text m => m T.Text
+    ptxt = T.pack <$> manyTill printChar (many1 (reservedSymbol "..."))
+    
 
 boolAssoc :: MonadParsec Char T.Text m => [(T.Text, m Bool)]
 boolAssoc = mkAssoc
@@ -218,7 +242,7 @@ sequenceParticipantTypeAssoc :: MonadParsec Char T.Text m => [(T.Text, m Sequenc
 sequenceParticipantTypeAssoc = mkAssoc
 
 skinParamParser :: MonadParsec Char T.Text m => m Command
-skinParamParser = SkinParameter . (:[]) <$> (reserved "skinparam" *> assocParser skinParamAssoc)
+skinParamParser = SkinParameter . (:[]) <$> (lexeme (reserved "skinparam") *> lexeme (assocParser skinParamAssoc))
 
 skinParamAssoc :: MonadParsec Char T.Text m => [(T.Text, m SkinParam)]
 skinParamAssoc = [

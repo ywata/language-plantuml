@@ -108,18 +108,20 @@ data StopResume = Stop | Resume
   deriving (Eq, Show, Enum, Bounded)
 
 data Command where
-  Activate :: Name -> Command  -- implemented
+  Activate :: Name -> Maybe Color -> Command  -- implemented
   AutoActivate :: OnOff -> Command
   Autonumber :: Maybe Integer -> Maybe Integer -> Maybe Integer -> Command -- implemented
---  Autonumber :: Command
---  Autonumber :: Maybe T.Text -> Command
+  Create :: Name -> Command
   Deactivate :: Name -> Command
+  Delay :: Maybe T.Text -> Command
+  Destroy :: Name -> Command
   Hide :: HiddenItem -> Command
   NewPage :: T.Text -> Command
   Title :: [T.Text] -> Command
   Divider :: T.Text -> Command
   VSpace :: Command
   SkinParameter :: [SkinParam] -> Command
+
   deriving (Eq, Show)
 
 

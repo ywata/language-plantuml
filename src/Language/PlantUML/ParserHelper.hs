@@ -48,13 +48,18 @@ reserved txt = do
   n <- lookAhead ident
   if n == txt then ident else empty
 
+reservedSymbol :: MonadParsec Char T.Text m => T.Text -> m T.Text
+reservedSymbol txt = do
+  n <- lookAhead (string txt <* (choice [space, endOfLine >> pure ()]))
+  if n == txt then (lexeme (string txt)) else empty
+  
+
 ----
 assocParser :: (MonadParsec Char T.Text m) => [(T.Text, m a)] -> m a
 assocParser = lexeme . choice . map pairParser
 
 pairParser :: MonadParsec Char T.Text m => (T.Text, m a) -> m a
 pairParser (txt, p) = lexeme (reserved txt) *> p
-
 
 ----
 oneLine :: MonadParsec Char T.Text m => m [T.Text]
