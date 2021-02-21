@@ -8,6 +8,7 @@ module Language.PlantUML
   , PlantUML(..)
   , Name(..)
 
+  , Stereotype(..)
   , Subject(..)
   , DefinedColor(..)
   , Color(..)

@@ -91,12 +91,6 @@ stereoRight (tmp, mark) ts = do
 
 
 -}
-
-      
-  
-
-
-
   
 
 declSubject :: MonadParsec Char T.Text m => m Subject
@@ -110,12 +104,16 @@ declSubject = choice $ map pa [("participant", Participant),
                                ("queue", Queue)]
   
   where
+    pa :: MonadParsec Char T.Text m =>
+      (T.Text, AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject) -> m Subject
+      
     pa (txt, f) = do
       _ <- reserved txt
       a <- asName
-      o <- optional (lexeme (reserved "order") >> lexeme L.decimal)
+      s <- optional (lexeme stereotype)      
+      o <- optional ((reserved "order") >> lexeme L.decimal)
       c <- optional (lexeme color)
-      return (f a o c)
+      return (f a s o c)
 
 
 --- Arrows
