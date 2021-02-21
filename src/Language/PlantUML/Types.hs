@@ -21,14 +21,14 @@ data AliasedName = Name1 Name
 type Order = Integer
 
 data Subject where
-  Participant :: AliasedName -> Maybe Order -> Maybe Color -> Subject
-  Actor       :: AliasedName -> Maybe Order -> Maybe Color -> Subject
-  Boundary    :: AliasedName -> Maybe Order -> Maybe Color -> Subject
-  Control     :: AliasedName -> Maybe Order -> Maybe Color -> Subject
-  Entity      :: AliasedName -> Maybe Order -> Maybe Color -> Subject
-  Database    :: AliasedName -> Maybe Order -> Maybe Color -> Subject
-  Collections :: AliasedName -> Maybe Order -> Maybe Color -> Subject
-  Queue       :: AliasedName -> Maybe Order -> Maybe Color -> Subject
+  Participant :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
+  Actor       :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
+  Boundary    :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
+  Control     :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
+  Entity      :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
+  Database    :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
+  Collections :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
+  Queue       :: AliasedName -> Maybe Order ->{- Maybe Stereotype ->-} Maybe Color -> Subject
   deriving (Eq, Show)
 
 data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
@@ -65,8 +65,8 @@ data Declaration where
   CommandDef    :: Command    -> Declaration
   deriving (Eq, Show)
 
-data Stereotype a where
-  Stereotype :: a -> Stereotype a
+data Stereotype where
+  Stereotype :: T.Text -> Stereotype
   deriving (Eq, Show)
 
 --data Box where

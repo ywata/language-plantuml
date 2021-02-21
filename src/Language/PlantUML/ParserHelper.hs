@@ -125,5 +125,5 @@ endMarker :: T.Text -> T.Text
 endMarker endKey = T.append  "end " endKey
 
 endOfLine :: MonadParsec Char T.Text m => m ()
-endOfLine = ((crlf) >> pure()) <|> (newline >> pure())
+endOfLine = (crlf >> pure ()) <|> (newline >> pure())
 

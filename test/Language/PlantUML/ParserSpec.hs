@@ -4,11 +4,11 @@ module Language.PlantUML.ParserSpec where
 
 import qualified Data.Text as T
 import Text.Megaparsec 
-    ( choice, MonadParsec(try), manyTill, notFollowedBy, lookAhead, ParseErrorBundle(..), Parsec(..))
+    ( between, choice, MonadParsec(try), many, manyTill, notFollowedBy, lookAhead, ParseErrorBundle(..), Parsec(..))
 import qualified Text.Megaparsec  as M (parse, parseMaybe)
 
 
-import Text.Megaparsec.Char as C ( space1, string, printChar )
+import Text.Megaparsec.Char as C ( space1, string, printChar, char )
 import Text.Megaparsec.Char.Lexer () 
 import Language.PlantUML.Types
 
@@ -117,12 +117,42 @@ spec = do
         `shouldBe` (Right (Actor (Name1 (Nq "A")) (Just 10) (Just (Color Red))))
       it "actor with alias, color and color" $ P.parse declSubject "" "actor A as Foo2 order 10 #red"
         `shouldBe` (Right (Actor (AliasedName (Nq "A")  (Nq "Foo2")) (Just 10) (Just (Color Red))))
+{-
+    describe "(manyTill printChar rightEnd)" $ do
+      it "manyTill:" $ P.parse (manyTill printChar rightEnd) "" "first >> "
+        `shouldBe` (Right "one line>>")
+      it "manyTill:" $ P.parse (manyTill printChar rightEnd) "" "first >>> second> a> >>"
+        `shouldBe` (Right "abc ")
+      it "manyTill:" $ P.parse (manyTill printChar rightEnd) "" "what > is >> this >>>"
+        `shouldBe` (Right "abc ")
+-}
 
---    describe "stereotype" $ do
---      it "one line" $ P.parse (stereotype (manyTill printChar (string ">>"))) "" "<<one>>>>"
---        `shouldBe` (Right (Stereotype ["one>>>>"]))
---      it "multiple lines" $ parse (stereotype (P.nonQuotedNq)) ""
---        "<<line\\\n> break stereotype>" `shouldBe` (Right (Stereotype "line break stereotype"))      
+    describe "stereotype" $ do
+      it "no >>" $ P.parseMaybe stereotype  "<<first\n"
+        `shouldBe` Nothing
+      it "no >>" $ P.parseMaybe stereotype  "<<first>\n"
+        `shouldBe` Nothing
+      
+      it "one >>" $ P.parse stereotype "" "<<first>>\n"
+        `shouldBe` (Right (Stereotype "first"))
+      it "one >>" $ P.parse stereotype "" "<<first>> \n"
+        `shouldBe` (Right (Stereotype "first"))
+      it "one >>" $ P.parse stereotype "" "<<first>>>\n"
+        `shouldBe` (Right (Stereotype "first>"))
+      it "one >>" $ P.parse stereotype "" "<<first>>> \n"
+        `shouldBe` (Right (Stereotype "first>"))
+        
+      it "one >>" $ P.parse stereotype "" "<<first> >>>\n"
+        `shouldBe` (Right (Stereotype "first> >"))
+      it "one >>" $ P.parse stereotype "" "<<first> >>> \n"
+        `shouldBe` (Right (Stereotype "first> >"))
+      it "two >>" $ P.parse stereotype "" "<<first> >>> second>>\n"
+        `shouldBe` (Right (Stereotype "first> >>> second"))
+      it "two >>" $ P.parse stereotype "" "<<first> >>> second>> \n"
+        `shouldBe` (Right (Stereotype "first> >>> second"))
+      it "two >>" $ P.parse stereotype "" "<<first> >>> second>>>\n"
+        `shouldBe` (Right (Stereotype "first> >>> second>"))
+
 
 
 --    describe "arrow1" $ do
@@ -280,3 +310,9 @@ spec = do
 
 
 
+
+rightEnd :: MonadParsec Char T.Text m => m T.Text
+rightEnd = do
+      string ">>"
+      rs <- many (char '>')
+      return $ T.append ">>" (T.pack rs)

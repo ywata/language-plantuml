@@ -1,12 +1,14 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Language.PlantUML.Parser  where
 
 import Language.PlantUML.Types
 
+import Debug.Trace (trace)
 
+import Data.Maybe (isJust)
 import Data.List (sortBy)
 import Data.Char (isSpace)
 
@@ -45,11 +47,54 @@ decls = (SubjectDef <$> declSubject)
       <|> (CommandDef <$> declCommand)
         
 
-stereotype :: (MonadParsec Char T.Text m) => m a -> m (Stereotype [a])
-stereotype p = do
-  f <- string "<<"
-  g <- manyTill p (notFollowedBy (string ">>"))
-  return $ Stereotype g
+stereotype :: MonadParsec Char T.Text m => m Stereotype
+stereotype = do
+  string "<<"
+  r <- stereoRight  ("", "") [] 
+  return $ Stereotype r
+  
+
+stereoRight :: MonadParsec Char T.Text m => (String, T.Text) -> [T.Text] -> m T.Text
+stereoRight (tmp, mark) ts = do
+  rest <- lookAhead restOfLine
+  let len = length ts
+  if T.length rest == 0 then
+    if len > 0 then
+      return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
+    else
+      empty
+
+    else do
+      let peek = P.parse (manyTill printChar rightEnd) "" rest
+      case peek of
+        Right _ -> do
+          r <- manyTill_ printChar rightEnd
+          stereoRight r (mark : T.pack tmp  : ts)
+        Left _ -> if len > 0 then
+                     return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
+                   else
+                     return $ T.append "|" rest
+
+  where
+    rightEnd :: MonadParsec Char T.Text m => m T.Text
+    rightEnd = do
+      string ">>"
+      rs <- many (char '>')
+      return $ T.append ">>" (T.pack rs)
+
+      
+
+{-
+<<>>
+<<aaaa>>
+<<aaaa> >> >>>
+
+
+-}
+
+      
+  
+
 
 
   
