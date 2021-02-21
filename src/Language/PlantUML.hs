@@ -2,9 +2,11 @@ module Language.PlantUML
   (
     parsePlantUMLFile
   , parsePlantUML
+  , AliasedName(..)
   , Arr(..)
   , PlantUML(..)
   , Name(..)
+
   , Subject(..)
   , DefinedColor(..)
   , Color(..)

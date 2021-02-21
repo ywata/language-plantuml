@@ -55,24 +55,22 @@ stereotype p = do
   
 
 declSubject :: MonadParsec Char T.Text m => m Subject
-declSubject = choice $ map pa [(Participant, "participant")
-                , (Actor, "actor")
-                , (Boundary, "boundary")
-                , (Control, "control")
-                , (Entity, "entity")
-                , (Database, "database")
-                , (Collections, "collections")
-                , (Queue, "queue")]
-                                                           
+declSubject = choice $ map pa [("participant", Participant),
+                               ("actor", Actor),
+                               ("boundary", Boundary),
+                               ("control", Control),
+                               ("entity", Entity),
+                               ("database", Database),
+                               ("collections", Collections),
+                               ("queue", Queue)]
+  
   where
---    alt [] = empty
---    alt (x : xs) = x <|> alt xs
-    pa (f, txt) = do
-      n <- (lexeme $ reserved txt) *> lexeme name
-      a <- reservedAs
+    pa (txt, f) = do
+      _ <- reserved txt
+      a <- asName
       o <- optional (lexeme (reserved "order") >> lexeme L.decimal)
       c <- optional (lexeme color)
-      return (f n a o c)
+      return (f a o c)
 
 
 --- Arrows
@@ -147,10 +145,6 @@ color = try definedColor <|> try hexColor
 colorAssoc :: MonadParsec Char T.Text m => [(T.Text, m DefinedColor)]
 colorAssoc = mkAssoc
     
-
-reservedAs :: MonadParsec Char T.Text m => m (Maybe Name)
-reservedAs = optional (Nq <$> (lexeme (reserved "as") *> lexeme nonQuotedName))
-
 
 ---- Notes
 declNotes ::  MonadParsec Char T.Text m => m Notes
@@ -296,7 +290,26 @@ skinParamAssoc = [
 
 
 
-
-
 name :: MonadParsec Char T.Text m => m Name
 name = (Q <$> quotedName) <|> (Nq <$> nonQuotedName)
+
+reservedAs :: MonadParsec Char T.Text m => m Name
+--reservedAs = optional (Nq <$> (lexeme (reserved "as") *> lexeme nonQuotedName))
+reservedAs = do
+  reserved "as"
+  name
+  
+
+
+asName ::  MonadParsec Char T.Text m => m AliasedName
+asName = do
+  n1 <- name
+  foundAs <- optional reservedAs
+  case (n1, foundAs) of
+    (Q _, Just m2@(Q _))   -> empty
+    (Q _, Just m2@(Nq _))  -> return $ AliasedName n1 m2
+    (Q _, Nothing)         -> return $ Name1 n1
+    (Nq _, Just m2@(Q _))  -> return $ AliasedName n1 m2
+    (Nq _, Just m2@(Nq _)) -> return $ AliasedName n1 m2
+    (Nq _, Nothing)        -> return $ Name1 n1
+

@@ -49,13 +49,13 @@ many1 p = do
 ident :: MonadParsec Char T.Text m => m T.Text
 ident = (\h t -> T.pack (h:t))
         <$> (letterChar <|> char '@') -- should be alphabet only
-        <*> many (alphaNumChar <|> char '_')
+        <*> lexeme (many (alphaNumChar <|> char '_'))
 
 nonQuotedName :: MonadParsec Char T.Text m => m T.Text
-nonQuotedName = T.pack <$> many1 (letterChar <|> digitChar)
+nonQuotedName = T.pack <$> lexeme (many1 (letterChar <|> digitChar))
 
 quotedName :: MonadParsec Char T.Text m => m T.Text
-quotedName = T.pack <$> (char '"' >> manyTill printChar (char '"'))
+quotedName = T.pack <$> lexeme ((char '"' >> manyTill printChar (char '"')))
 
 
 

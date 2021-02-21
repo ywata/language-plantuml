@@ -14,6 +14,7 @@ import Language.PlantUML.Types
 
 import Language.PlantUML.Parser
     ( plantUML,
+      asName,
       declSubject,
       declArrow,
       color,
@@ -55,26 +56,26 @@ spec = do
       it "non quoted" $ P.parseMaybe name "ab" `shouldBe` (Just (Nq "ab"))
 
     describe "reservedAs" $ do
-      it "use alias" $ P.parse reservedAs "" "as abc" `shouldBe` (Right (Just (Nq "abc")))
+      it "use alias" $ P.parse reservedAs "" "as abc" `shouldBe` (Right (Nq "abc"))
       
       it "no alias" $ P.parseMaybe reservedAs "as" `shouldBe` Nothing
-      it "works after alias" $ P.parse (P.lexeme reservedAs) "" "as abc " `shouldBe` (Right (Just (Nq "abc")))
+      it "works after alias" $ P.parse (P.lexeme reservedAs) "" "as abc " `shouldBe` (Right (Nq "abc"))
 
       
       
       it "works after alias" $ P.parse (P.lexeme reservedAs *> string "string") "" "as abc string" `shouldBe` (Right "string")
-      it "use alias" $ P.parseMaybe reservedAs "" `shouldBe` (Just Nothing)
+      it "use alias" $ P.parseMaybe reservedAs "" `shouldBe` Nothing
 
     describe "space + reservedAs" $ do
-      it "use alias" $ P.parse (try $ P.spaceConsumer *> reservedAs) "" " as abc" `shouldBe` (Right (Just (Nq "abc")))
+      it "use alias" $ P.parse (try $ P.spaceConsumer *> reservedAs) "" " as abc" `shouldBe` (Right  (Nq "abc"))
       it "no alias" $ P.parseMaybe (try $ P.spaceConsumer *> reservedAs) " as" `shouldBe` Nothing
-      it "works after alias" $ P.parse (try $ P.spaceConsumer *> P.lexeme reservedAs) "" "  as abc " `shouldBe` (Right (Just (Nq "abc")))
+      it "works after alias" $ P.parse (try $ P.spaceConsumer *> P.lexeme reservedAs) "" "  as abc " `shouldBe` (Right (Nq "abc"))
       it "works after alias" $ P.parse (try (P.spaceConsumer *> P.lexeme reservedAs) *> string "string") "" "  as abc string"
         `shouldBe` (Right "string")
       it "empty" $ P.parseMaybe (try (P.spaceConsumer *> reservedAs)) " "
-        `shouldBe` (Just Nothing)
+        `shouldBe` Nothing
       it "Foo1" $ P.parse (reservedAs) "" "as Foo1"
-        `shouldBe` (Right (Just (Nq "Foo1")))
+        `shouldBe` (Right (Nq "Foo1"))
 
 
     describe "color" $ do
@@ -85,37 +86,37 @@ spec = do
 
     describe "declSubject" $ do
       it "participant w/o alias" $ P.parse declSubject "" "participant abc"
-        `shouldBe` (Right (Participant (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Participant (Name1 (Nq "abc")) Nothing Nothing))
       it "participant w alias" $ P.parse declSubject "" ("participant abc as a")
-        `shouldBe` (Right (Participant (Nq "abc") (Just (Nq "a")) Nothing Nothing))
+        `shouldBe` (Right (Participant (AliasedName (Nq "abc") (Nq "a")) Nothing Nothing))
       -- more variation
       it "actor w/o alias" $ P.parse declSubject "" "actor abc"
-        `shouldBe` (Right (Actor (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Actor (Name1 (Nq "abc")) Nothing Nothing))
       it "boundary w/o alias" $ P.parse declSubject "" "boundary abc"
-        `shouldBe` (Right (Boundary (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Boundary (Name1 (Nq "abc")) Nothing Nothing))
       it "control w/o alias" $ P.parse declSubject "" "control abc"
-        `shouldBe` (Right (Control (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Control (Name1 (Nq "abc")) Nothing Nothing))
       it "entity w/o alias" $ P.parse declSubject "" "entity abc"
-        `shouldBe` (Right (Entity (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Entity (Name1 (Nq "abc")) Nothing Nothing))
       it "database w/o alias" $ P.parse declSubject "" "database abc"
-        `shouldBe` (Right (Database (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Database (Name1 (Nq "abc")) Nothing Nothing))
       it "database w/o alias" $ P.parse declSubject "" "database abc"
-        `shouldBe` (Right (Database (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Database (Name1 (Nq "abc")) Nothing Nothing))
       it "collections w/o alias" $ P.parse declSubject "" "collections abc"
-        `shouldBe` (Right (Collections (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Collections (Name1 (Nq "abc")) Nothing Nothing))
       it "queue w/o alias" $ P.parse declSubject "" "queue abc"
-        `shouldBe` (Right (Queue (Nq "abc") Nothing Nothing Nothing))
+        `shouldBe` (Right (Queue (Name1 (Nq "abc")) Nothing Nothing))
       it "consective actors" $ P.parse declSubject "" "participant participant as Foo \nactor actor as Foo1"
-        `shouldBe` (Right (Participant (Nq "participant") (Just (Nq "Foo")) Nothing Nothing))
+        `shouldBe` (Right (Participant (AliasedName (Nq "participant") (Nq "Foo")) Nothing Nothing))
         
       it "actor with order" $ P.parse declSubject "" "actor A order 10"
-        `shouldBe` (Right (Actor (Nq "A") Nothing (Just 10) Nothing))
+        `shouldBe` (Right (Actor (Name1 (Nq "A")) (Just 10) Nothing))
       it "actor with color" $ P.parse declSubject "" "actor A #red"
-        `shouldBe` (Right (Actor (Nq "A") Nothing Nothing (Just (Color Red))))
+        `shouldBe` (Right (Actor (Name1 (Nq "A")) Nothing (Just (Color Red))))
       it "actor with color and order" $ P.parse declSubject "" "actor A order 10 #red"
-        `shouldBe` (Right (Actor (Nq "A") Nothing (Just 10) (Just (Color Red))))
+        `shouldBe` (Right (Actor (Name1 (Nq "A")) (Just 10) (Just (Color Red))))
       it "actor with alias, color and color" $ P.parse declSubject "" "actor A as Foo2 order 10 #red"
-        `shouldBe` (Right (Actor (Nq "A") (Just (Nq "Foo2")) (Just 10) (Just (Color Red))))
+        `shouldBe` (Right (Actor (AliasedName (Nq "A")  (Nq "Foo2")) (Just 10) (Just (Color Red))))
 
 --    describe "stereotype" $ do
 --      it "one line" $ P.parse (stereotype (manyTill printChar (string ">>"))) "" "<<one>>>>"
@@ -247,14 +248,25 @@ spec = do
         P.parse skinParamParser "" "skinparam maxMessageSize 10"
         `shouldBe` (Right (SkinParameter [MaxMessageSize 10]))
 
+    describe "asName" $ do
+      it "name only" $ P.parse asName "" "name" `shouldBe` (Right (Name1 (Nq "name")))
+      it "quoted name only" $ P.parse asName "" "\"name\"" `shouldBe` (Right (Name1 (Q "name")))
+      it "name with alias" $ P.parse asName "" "name as n" `shouldBe` (Right (AliasedName (Nq "name") (Nq "n")))
+      it "quoted name only" $ P.parse asName "" "\"name\"" `shouldBe` (Right (Name1 (Q "name")))
+      it "quoted name with alias" $ P.parse asName "" "\"name\" as n " `shouldBe` (Right (AliasedName (Q "name") (Nq "n")))
+      
+      
+
+
 
     describe "uml" $ do
       it "@startuml" $ P.parseMaybe plantUML "@startuml" `shouldBe` Nothing
       it "@startuml and @enduml" $ P.parse plantUML "" "@startuml@enduml" `shouldBe` (Right (PlantUML []))
       it "@startuml and @enduml" $ P.parse plantUML "" "@startuml actor A @enduml"
-        `shouldBe` (Right (PlantUML [SubjectDef (Actor (Nq "A") Nothing Nothing Nothing)]))
+        `shouldBe` (Right (PlantUML [SubjectDef (Actor (Name1 (Nq "A")) Nothing Nothing)]))
       it "@startuml and @enduml" $ P.parse plantUML "" "@startuml actor A as a A -> B : aaa\n@enduml"
-        `shouldBe` (Right (PlantUML [SubjectDef (Actor (Nq "A") (Just (Nq "a")) Nothing Nothing),ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Nq "B")) (Just " aaa"))]))
+        `shouldBe` (Right (PlantUML [SubjectDef (Actor (AliasedName (Nq "A") (Nq "a")) Nothing Nothing),
+                                     ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Nq "B")) (Just " aaa"))]))
 
 
 
