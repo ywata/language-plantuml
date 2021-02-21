@@ -55,7 +55,7 @@ stereotype p = do
   
 
 declSubject :: MonadParsec Char T.Text m => m Subject
-declSubject = alt $ map pa [(Participant, "participant")
+declSubject = choice $ map pa [(Participant, "participant")
                 , (Actor, "actor")
                 , (Boundary, "boundary")
                 , (Control, "control")
@@ -65,10 +65,10 @@ declSubject = alt $ map pa [(Participant, "participant")
                 , (Queue, "queue")]
                                                            
   where
-    alt [] = empty
-    alt (x : xs) = x <|> alt xs
+--    alt [] = empty
+--    alt (x : xs) = x <|> alt xs
     pa (f, txt) = do
-      n <- Name <$> ((lexeme $ reserved txt) *> lexeme name)
+      n <- (lexeme $ reserved txt) *> lexeme name
       a <- reservedAs
       o <- optional (lexeme (reserved "order") >> lexeme L.decimal)
       c <- optional (lexeme color)
@@ -148,8 +148,8 @@ colorAssoc :: MonadParsec Char T.Text m => [(T.Text, m DefinedColor)]
 colorAssoc = mkAssoc
     
 
-reservedAs :: MonadParsec Char T.Text m => m (Maybe Alias)
-reservedAs = optional (Alias <$> (lexeme (reserved "as") *> lexeme nonQuotedName))
+reservedAs :: MonadParsec Char T.Text m => m (Maybe Name)
+reservedAs = optional (Nq <$> (lexeme (reserved "as") *> lexeme nonQuotedName))
 
 
 ---- Notes
@@ -173,13 +173,13 @@ declNotes = go
           note <- oneLine
           return $ dcon Nothing note
         "of" -> do
-          name <- optional (Name <$> lexeme name)
+          name <- optional (lexeme name)
           note <- multiLine (isEndWith "note")
           return $ dcon name note
     overNote :: MonadParsec Char T.Text m => (Name -> Maybe Name -> [T.Text] -> Notes) -> m Notes
     overNote dcon = do
-      first <- Name <$> lexeme name
-      second <- optional (Name <$> (lexeme (char ',') *> lexeme name))
+      first <- lexeme name
+      second <- optional (lexeme (char ',') *> lexeme name)
       mark <- (string ":") <|> (T.pack <$> manyTill printChar endOfLine)
       case mark of
         ":" -> do
@@ -225,15 +225,15 @@ onOffAssoc = mkAssoc
 
 commandAssoc :: MonadParsec Char T.Text m => [(T.Text, m Command)]
 commandAssoc = [
-  ("activate", Activate <$> (Name <$> name) <*> optional (lexeme color)),
+  ("activate", Activate <$>  name <*> optional (lexeme color)),
   ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
     Autonumber <$> optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) ),
-  ("create", Create <$> (Name <$> name)),
-  ("destroy", Destroy <$> (Name <$> name)),
+  ("create", Create <$> name),
+  ("destroy", Destroy <$> name),
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
 
-  ("deactivate", Deactivate <$> (Name <$> name)),
+  ("deactivate", Deactivate <$> name),
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
   ("title", Title <$> restOfLine)
   ]
@@ -297,3 +297,6 @@ skinParamAssoc = [
 
 
 
+
+name :: MonadParsec Char T.Text m => m Name
+name = (Q <$> quotedName) <|> (Nq <$> nonQuotedName)

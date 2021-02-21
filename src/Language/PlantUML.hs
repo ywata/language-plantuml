@@ -5,7 +5,6 @@ module Language.PlantUML
   , Arr(..)
   , PlantUML(..)
   , Name(..)
-  , Alias(..)
   , Subject(..)
   , DefinedColor(..)
   , Color(..)

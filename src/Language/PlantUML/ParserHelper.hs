@@ -57,9 +57,6 @@ nonQuotedName = T.pack <$> many1 (letterChar <|> digitChar)
 quotedName :: MonadParsec Char T.Text m => m T.Text
 quotedName = T.pack <$> (char '"' >> manyTill printChar (char '"'))
 
-name :: MonadParsec Char T.Text m => m T.Text
-name = quotedName <|> nonQuotedName
-
 
 
 --- Keyword name of elements of diagram

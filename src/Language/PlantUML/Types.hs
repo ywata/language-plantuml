@@ -8,35 +8,27 @@ data PlantUML where
   PlantUML :: [Declaration] -> PlantUML
   deriving (Eq, Show)
 
-
-newtype Name = Name T.Text
+data Name = Q T.Text | Nq T.Text
   deriving (Eq, Show)
 
-data AliasedName = Name1 T.Text
-                 | NameWithAlias T.Text T.Text
+data AliasedName = Name1 Name
+                 | NameWithAlias Name Name
                  | NoName
   deriving (Eq, Show)
 
-instance IsString Name where
-  fromString = Name . T.pack
-
-newtype Alias = Alias T.Text
-  deriving (Eq, Show)
-instance IsString Alias where
-  fromString = Alias . T.pack
 
 
 type Order = Integer
 
 data Subject where
-  Participant :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
-  Actor       :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
-  Boundary    :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
-  Control     :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
-  Entity      :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
-  Database    :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
-  Collections :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
-  Queue       :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
+  Participant :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
+  Actor       :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
+  Boundary    :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
+  Control     :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
+  Entity      :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
+  Database    :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
+  Collections :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
+  Queue       :: Name -> Maybe Name -> Maybe Order -> Maybe Color -> Subject
   deriving (Eq, Show)
 
 data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
@@ -55,7 +47,7 @@ data Color where
 
 data Arrow where
   Arrow ::  Maybe T.Text -> T.Text -> Maybe T.Text -> Maybe T.Text -> Arrow
-  Arrow2 ::  Maybe T.Text -> Arr  -> Maybe T.Text -> Maybe T.Text -> Arrow  
+  Arrow2 ::  Maybe Name -> Arr  -> Maybe Name -> Maybe T.Text -> Arrow  
   Return :: Maybe T.Text -> Arrow
   deriving (Eq, Show)
 

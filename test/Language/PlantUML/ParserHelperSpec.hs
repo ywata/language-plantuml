@@ -16,7 +16,6 @@ import qualified Language.PlantUML.ParserHelper as P
    dropContinuationLine,
    ident,
    lexeme,
-   name,
    nonQuotedName,
    pairParser,
    quotedName,
@@ -43,10 +42,6 @@ spec = do
       it "日本語" $ P.parseMaybe P.quotedName "\"日本語\"" `shouldBe` (Just "日本語")
       it "block comment" $ P.parseMaybe P.quotedName "\"ab /' '/c\"" `shouldBe` (Just "ab /' '/c")
       it "line comment" $ P.parseMaybe P.quotedName "\"ab 'aaaaaa\"" `shouldBe` (Just "ab 'aaaaaa")
-
-    describe "name" $ do
-      it "quoted"     $ P.parseMaybe P.name "\"ab\"" `shouldBe` (Just "ab")
-      it "non quoted" $ P.parseMaybe P.name "ab" `shouldBe` (Just "ab")
 
     describe "reserved" $ do
       it "accepts" $ P.parseMaybe (P.reserved "as") "as" `shouldBe` (Just "as")
