@@ -4,6 +4,7 @@ module Language.PlantUML
   , parsePlantUML
   , AliasedName(..)
   , Arr(..)
+  , AutonumberType(..)
   , PlantUML(..)
   , Name(..)
 

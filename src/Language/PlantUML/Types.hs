@@ -47,7 +47,7 @@ data Color where
 
 data Arrow where
   Arrow ::  Maybe T.Text -> T.Text -> Maybe T.Text -> Maybe T.Text -> Arrow
-  Arrow2 ::  Maybe Name -> Arr  -> Maybe Name -> Maybe T.Text -> Arrow  
+  Arrow2 ::  Maybe Name -> Arr  -> Maybe AliasedName -> Maybe T.Text -> Arrow  
   Return :: Maybe T.Text -> Arrow
   deriving (Eq, Show)
 
@@ -105,13 +105,14 @@ data HiddenItem = FootBox | Unlinked
 data OnOff = On | Off
   deriving (Eq, Show, Enum, Bounded)
 
-data StopResume = Stop | Resume
-  deriving (Eq, Show, Enum, Bounded)
-
+data AutonumberType = Start (Maybe Integer) (Maybe Integer) (Maybe T.Text)
+                    | Resume (Maybe Integer) (Maybe T.Text)
+                    | Stop 
+  deriving (Eq, Show)
 data Command where
   Activate :: Name -> Maybe Color -> Command  -- implemented
   AutoActivate :: OnOff -> Command
-  Autonumber :: Maybe Integer -> Maybe Integer -> Maybe Integer -> Command -- implemented
+  Autonumber :: AutonumberType -> Command -- implemented
   Create :: Name -> Command
   Deactivate :: Name -> Command
   Delay :: Maybe T.Text -> Command

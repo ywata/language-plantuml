@@ -99,7 +99,7 @@ arrow = do
   l <- optional (choice $ map string left')
   m <- shaft
   r <- optional (choice $ map string right')
-  ro <- optional (choice $ map string options')
+  ro <- optional (lexeme . choice $ map string options')
   return $ Arr (lo <++> l) m (r <++> ro)
   where
     dashes, dashes1 :: MonadParsec Char T.Text m => m T.Text    
@@ -130,7 +130,7 @@ declArrow :: MonadParsec Char T.Text m => m Arrow
 declArrow = try(Return <$> ((reserved "return") *> optional restOfLine)) <|>
             try (Arrow2 <$> optional (lexeme name)
                  <*> lexeme arrow
-                 <*> optional (lexeme name)
+                 <*> optional asName
                  <*> optional ((char ':') *> restOfLine))
 
 
@@ -222,7 +222,7 @@ commandAssoc = [
   ("activate", Activate <$>  name <*> optional (lexeme color)),
   ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
-    Autonumber <$> optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) <*>  optional (lexeme L.decimal) ),
+    Autonumber <$> autonumberTypeParser ),
   ("create", Create <$> name),
   ("destroy", Destroy <$> name),
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
@@ -231,6 +231,13 @@ commandAssoc = [
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
   ("title", Title <$> restOfLine)
   ]
+
+autonumberTypeParser :: MonadParsec Char T.Text m => m AutonumberType
+autonumberTypeParser =  (reserved "stop" >> pure Stop) 
+                        <|> (Resume <$> (reserved "resume" *> optional (lexeme L.decimal)) <*> optional quotedName)
+                        <|> (Start <$>  optional (lexeme L.decimal) <*> optional (lexeme L.decimal) <*> optional quotedName)
+
+
 
 delayParser :: MonadParsec Char T.Text m => m Command
 delayParser = do
