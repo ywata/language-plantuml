@@ -2,6 +2,7 @@ module Language.PlantUML
   (
     parsePlantUMLFile
   , parsePlantUML
+  , Arr(..)
   , PlantUML(..)
   , Name(..)
   , Alias(..)
@@ -14,6 +15,7 @@ module Language.PlantUML
   , Grouping(..)
   , HiddenItem(..)
   , Command(..)
+  , Shaft(..)
   , SkinParam(..)
   , Notes(..)
   )

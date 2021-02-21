@@ -2,10 +2,28 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Language.PlantUML.ParserHelper where
-import Text.Megaparsec
+import Text.Megaparsec hiding(parse, parseMaybe)
+import qualified Text.Megaparsec as M
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import qualified Data.Text as T
+
+parse :: Parsec Char T.Text a -> String -> T.Text -> Either (ParseErrorBundle T.Text Char) a
+parse p txt = M.parse p txt . T.pack . dropContinuationLine . T.unpack
+
+parseMaybe :: Parsec Char T.Text a -> T.Text -> Maybe a
+parseMaybe p = M.parseMaybe p . T.pack . dropContinuationLine . T.unpack
+
+-- slow
+dropContinuationLine :: String -> String
+dropContinuationLine = go
+  where
+    go :: String -> String
+    go [] = []
+    go ('\\' : '\\' :  xs) = '\\' : go xs
+    go ('\\' : '\n' : xs) = go xs
+    go ('\\' : '\r' : '\n' : xs) = go xs
+    go (x : xs) = x : go xs
 
 spaceConsumer :: MonadParsec Char T.Text m => m ()
 spaceConsumer = L.space space1 (L.skipLineComment "'") (L.skipBlockComment "/'" "'/")
@@ -42,12 +60,15 @@ quotedName = T.pack <$> (char '"' >> manyTill printChar (char '"'))
 name :: MonadParsec Char T.Text m => m T.Text
 name = quotedName <|> nonQuotedName
 
+
+
 --- Keyword name of elements of diagram
 reserved :: MonadParsec Char T.Text m => T.Text -> m T.Text
 reserved txt = do
   n <- lookAhead ident
-  if n == txt then ident else empty
+  if n == txt then lexeme ident else empty
 
+{-- TODO: This may need update. -}
 reservedSymbol :: MonadParsec Char T.Text m => T.Text -> m T.Text
 reservedSymbol txt = do
   n <- lookAhead (string txt <* (choice [space, endOfLine >> pure ()]))
@@ -66,9 +87,10 @@ oneLine :: MonadParsec Char T.Text m => m [T.Text]
 oneLine = ((:[]) . T.pack) <$> manyTill printChar endOfLine
 
 ---- restOfLine treates continuation line or virtual one line
-restOfLine :: MonadParsec Char T.Text m => m [T.Text]
-restOfLine = restOfLine' []
-  where
+
+restOfLine :: MonadParsec Char T.Text m => m T.Text
+restOfLine = T.pack <$> manyTill printChar endOfLine
+{- where
     restOfLine' :: MonadParsec Char T.Text m => [T.Text] -> m [T.Text]
     restOfLine' xs = do
       l <- T.pack <$> manyTill printChar endOfLine
@@ -78,7 +100,7 @@ restOfLine = restOfLine' []
         return $ reverse (l : xs)
 isContinueLine :: T.Text -> Bool
 isContinueLine = T.isSuffixOf "\\"
-
+-}
 
 multiLine :: MonadParsec Char T.Text m => (T.Text -> Bool) -> m [T.Text]
 multiLine = multiLine' []
@@ -90,6 +112,7 @@ multiLine' xs prep = do
     return (reverse xs)
   else
     multiLine' (l:xs) prep
+
 
 --miscParsers :: MonadParsec Char T.Text m => [(String, m Command)]
 --miscParsers = [(Autonumber, triple (optional Nothing(lexeme L.
@@ -104,5 +127,6 @@ isEndWith endKey str = case res of
 endMarker :: T.Text -> T.Text
 endMarker endKey = T.append  "end " endKey
 
-endOfLine :: MonadParsec Char T.Text m => m T.Text
-endOfLine = crlf <|> (T.pack . (:[]) <$> newline)
+endOfLine :: MonadParsec Char T.Text m => m ()
+endOfLine = ((crlf) >> pure()) <|> (newline >> pure())
+

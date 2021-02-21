@@ -11,6 +11,12 @@ data PlantUML where
 
 newtype Name = Name T.Text
   deriving (Eq, Show)
+
+data AliasedName = Name1 T.Text
+                 | NameWithAlias T.Text T.Text
+                 | NoName
+  deriving (Eq, Show)
+
 instance IsString Name where
   fromString = Name . T.pack
 
@@ -33,9 +39,11 @@ data Subject where
   Queue       :: Name -> Maybe Alias -> Maybe Order -> Maybe Color -> Subject
   deriving (Eq, Show)
 
+data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
+  deriving(Show, Eq)
 
-data ArrowEnd = ArrowHead | ArrowTail
-  deriving (Eq, Show)
+data Arr = Arr (Maybe T.Text) Shaft (Maybe T.Text)
+  deriving(Show, Eq)
 
 data DefinedColor = Red | Blue | Yellow | Black | White
   deriving (Eq, Show, Enum, Bounded)
@@ -46,8 +54,9 @@ data Color where
   deriving (Eq, Show)
 
 data Arrow where
-  Arrow ::  Maybe T.Text -> T.Text -> Maybe T.Text -> Maybe [T.Text] -> Arrow
-  Return :: [T.Text] -> Arrow
+  Arrow ::  Maybe T.Text -> T.Text -> Maybe T.Text -> Maybe T.Text -> Arrow
+  Arrow2 ::  Maybe T.Text -> Arr  -> Maybe T.Text -> Maybe T.Text -> Arrow  
+  Return :: Maybe T.Text -> Arrow
   deriving (Eq, Show)
 
 data Notes where
@@ -94,7 +103,7 @@ data GroupKind = Alt | Opt | Loop | Par | Break | Critical | Group
 data Grouping where
   -- Horizontal grouping provide optional grouping using else keyword,
   -- multiple Declaration groups are allowed.
-  Grouping :: GroupKind -> [T.Text] -> [[Declaration]] -> Grouping
+  Grouping :: GroupKind -> T.Text -> [[Declaration]] -> Grouping
   Box :: [Declaration] -> [T.Text] -> Grouping
   deriving (Eq, Show)
 
@@ -117,7 +126,7 @@ data Command where
   Destroy :: Name -> Command
   Hide :: HiddenItem -> Command
   NewPage :: T.Text -> Command
-  Title :: [T.Text] -> Command
+  Title :: T.Text -> Command
   Divider :: T.Text -> Command
   VSpace :: Command
   SkinParameter :: [SkinParam] -> Command

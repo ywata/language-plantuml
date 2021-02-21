@@ -26,16 +26,14 @@ parsePlantUMLFile p = parsePlantUML <$> T.readFile p
 
 -- | Parse 'T.Text' into a 'PlantUML' structure.
 parsePlantUML :: T.Text -> Either (ParseErrorBundle T.Text Char) PlantUML
-parsePlantUML = parse plantUML ""
+parsePlantUML = P.parse plantUML "" 
 
 
 plantUML :: MonadParsec Char T.Text m => m PlantUML
 plantUML = decls
   where
-    decls = PlantUML <$> ((lexeme (reserved "@startuml")) >> declarations <* (lexeme (reserved "@enduml")))
-
-declarations :: MonadParsec Char T.Text m => m [Declaration]
-declarations = many declaration
+--    decls = PlantUML <$> ((reserved "@startuml") *> declarations <* (reserved "@enduml"))
+    decls = PlantUML <$> between (reserved "@startuml") (reserved "@enduml") (many declaration)
 
 declaration :: MonadParsec Char T.Text m => m Declaration
 declaration = lexeme decls
@@ -78,41 +76,65 @@ declSubject = alt $ map pa [(Participant, "participant")
 
 
 --- Arrows
+{-
 right, left, options, arrows, dashes :: [String]
-right = ["", ">", ">>", "\\", "\\\\", "/", "//"]
 left =  ["", "<", "<<", "\\", "\\\\", "/", "//"]
+right = ["", ">", ">>", "\\", "\\\\", "/", "//"]
 options = ["", "x", "o"]
 dashes = ["-", "--"]
+-}
+right', left', options', dash' :: [T.Text]
+left'  = map T.pack $ sortBy order $  ["<", "<<", "\\", "\\\\", "/", "//"]
+right' = map T.pack $ sortBy order $  [">", ">>", "\\", "\\\\", "/", "//"]
+options' = map T.pack $ ["x", "o"]
+dash' = ["-"]
 
--- sort by declising length to avoid unwanted match. (if not sorted, --> can match against -->o)
-arrows = sortBy order $ map (\(a,b,c,d,e) -> a ++ b++ c++ d++e) $
-           filter f [(lopt, l,  dash, r, ropt) | dash <- dashes, r <- right, l <- left, ropt <- options, lopt <- options]
+order :: [a] -> [a] -> Ordering
+order a b | length a == length b = EQ
+order a b | length a < length b = GT
+order a b | length a > length b = LT
+
+
+arrow :: MonadParsec Char T.Text m => m Arr
+arrow = do
+  lo <- optional (choice $ map string options')
+  l <- optional (choice $ map string left')
+  m <- shaft
+  r <- optional (choice $ map string right')
+  ro <- optional (choice $ map string options')
+  return $ Arr (lo <++> l) m (r <++> ro)
   where
-    order :: [a] -> [a] -> Ordering
-    order a b | length a == length b = EQ
-    order a b | length a < length b = GT
-    order a b | length a > length b = LT
-    -- the following pattern is not allowed for arrow
-    f ("", "", _, "", "") = False
-    f ("o", "", _, "", "") = False
-    f ("", "", _, "", "o") = False    
-    f ("o", "", _, "", "o") = False
-    f _ = True
+    dashes, dashes1 :: MonadParsec Char T.Text m => m T.Text    
+    dashes = do
+      ds <- (T.pack <$> (many (char '-')))
+      if ds == "" then empty else return ds
+    dashes1 = (T.pack <$> (many1 (char '-')))
+    
+    shaft :: MonadParsec Char T.Text m => m Shaft
+    shaft =
+      -- As left and right side of color should have one dash, they are separately processed.
+      -- Otherwise, this parser does not consume anything and makes bigger parser falls into infinite loop.
+      try (Shaft <$> (Just <$> dashes1) <*> (optional (between (string "[") (string "]") color)) <*> optional dashes)
+      <|>
+      try (Shaft <$> optional dashes <*> (optional (between (string "[") (string "]") color)) <*>  (Just <$> dashes1))
+    norm :: Shaft -> Shaft
+    norm (Shaft l m b) = Shaft (norm' l) m (norm' b)
+    norm' (Just "") = Nothing
+    norm' a = a
 
-parrows :: MonadParsec Char T.Text m => [m T.Text]
-parrows = map string $ map T.pack arrows
+    (<++>) (Just l) (Just r) = Just (T.append l  r)
+    (<++>) (Just l) Nothing = Just l
+    (<++>) Nothing (Just r) = Just r
+    (<++>) _ _ = Nothing
+
+
 declArrow :: MonadParsec Char T.Text m => m Arrow
-declArrow = try (Arrow
-            <$> optional (lexeme name)
-            <*> (lexeme (choice parrows))
-            <*> optional (lexeme name)
-            <*> optional (lexeme $ (char ':') *> description))
-            <|>
-            try (Return <$> (lexeme $reserved "return" *> restOfLine))
+declArrow = try(Return <$> ((reserved "return") *> optional restOfLine)) <|>
+            try (Arrow2 <$> optional (lexeme name)
+                 <*> lexeme arrow
+                 <*> optional (lexeme name)
+                 <*> optional ((char ':') *> restOfLine))
 
-
-description:: MonadParsec Char T.Text m => m [T.Text]
-description = restOfLine
 
 color ::  MonadParsec Char T.Text m => m Color
 color = try definedColor <|> try hexColor
@@ -176,8 +198,7 @@ declGrouping = do
   labels <- restOfLine -- double label temporary ignored due to difficulity
   go groupKind labels []
   where
-
-    go :: MonadParsec Char T.Text m => GroupKind -> [T.Text] ->  [[Declaration]] -> m Grouping
+    go :: MonadParsec Char T.Text m => GroupKind -> T.Text ->  [[Declaration]] -> m Grouping
     go k l xs = do
       let  gk = T.toLower . T.pack . show $ k
       (decls, e) <- manyTill_ declaration
@@ -221,7 +242,7 @@ delayParser :: MonadParsec Char T.Text m => m Command
 delayParser = do
   reservedSymbol "..."
   ls <- lookAhead restOfLine
-  let txt = parseMaybe ptxt (T.concat ls)
+  let txt = P.parseMaybe ptxt ls
   case txt of
     Just t -> do
       _ <- restOfLine
