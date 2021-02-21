@@ -117,6 +117,8 @@ spec = do
         `shouldBe` (Right (Actor (Name1 (Nq "A")) Nothing (Just 10) (Just (Color Red))))
       it "actor with alias, color and color" $ P.parse declSubject "" "actor A as Foo2 order 10 #red"
         `shouldBe` (Right (Actor (AliasedName (Nq "A")  (Nq "Foo2")) Nothing (Just 10) (Just (Color Red))))
+      it "participant with stereotype " $ P.parse declSubject "" "participant Bob << (C,#ADD1B2) >>\n" -- 
+        `shouldBe` (Right (Participant (Name1 (Nq "Bob")) (Just (Stereotype " (C,#ADD1B2) ")) Nothing Nothing))
 {-
     describe "(manyTill printChar rightEnd)" $ do
       it "manyTill:" $ P.parse (manyTill printChar rightEnd) "" "first >> "

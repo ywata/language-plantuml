@@ -138,7 +138,7 @@ data SequenceParticipantType = Underline
 data SkinParam where
   ResponseMessageBelowArrow :: Bool -> SkinParam
   MaxMessageSize :: Int -> SkinParam
-  Guillment :: Bool -> SkinParam
+  Guillemet :: Bool -> SkinParam
   SequenceArrowThickness :: Int -> SkinParam
   RoundCorner :: Int -> SkinParam
   SequenceParticipant :: SequenceParticipantType -> SkinParam

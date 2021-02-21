@@ -313,7 +313,7 @@ skinParamAssoc :: MonadParsec Char T.Text m => [(T.Text, m SkinParam)]
 skinParamAssoc = [
     ("responseMessageBelowArrow", ResponseMessageBelowArrow <$> assocParser boolAssoc),
     ("maxMessageSize", MaxMessageSize <$> lexeme L.decimal),
-    ("guillment", Guillment <$> assocParser boolAssoc),
+    ("guillemet", Guillemet <$> assocParser boolAssoc),
     ("sequenceArrowThickness",  SequenceArrowThickness <$> lexeme L.decimal),
     ("roundCorner", RoundCorner <$> lexeme L.decimal),
     ("sequenceParticipant", SequenceParticipant <$> assocParser sequenceParticipantTypeAssoc),
