@@ -113,7 +113,7 @@ data AutonumberType = Start (Maybe Integer) (Maybe Integer) (Maybe T.Text)
   deriving (Eq, Show)
 
 data LifeLineOp = Create | Destroy
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
 
 data Command where
   Activate :: Name -> Maybe Color -> Command  -- implemented
@@ -123,9 +123,11 @@ data Command where
   Deactivate :: Name -> Command
   Delay :: Maybe T.Text -> Command
 --  Destroy :: Name -> Command
+  Header :: Maybe T.Text -> Command
+  Footer :: Maybe T.Text -> Command
   Hide :: HiddenItem -> Command
-  LifeLine :: LifeLineOp -> Name -> Command
-  NewPage :: T.Text -> Command
+  LifeLine :: LifeLineOp -> Maybe SubjectType -> Name -> Command
+  NewPage :: Maybe T.Text -> Command
   Title :: T.Text -> Command
   Divider :: T.Text -> Command
   VSpace :: Command

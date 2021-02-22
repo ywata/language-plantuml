@@ -187,7 +187,13 @@ color = try definedColor <|> try hexColor
 
 colorAssoc :: MonadParsec Char T.Text m => [(T.Text, m DefinedColor)]
 colorAssoc = mkAssoc
-    
+
+subjectTypeAssoc :: MonadParsec Char T.Text m => [(T.Text, m SubjectType)]
+subjectTypeAssoc = mkAssoc
+
+lifeLineOpAssoc :: MonadParsec Char T.Text m => [(T.Text, m LifeLineOp)]
+lifeLineOpAssoc = mkAssoc
+
 
 ---- Notes
 declNotes ::  MonadParsec Char T.Text m => m Notes
@@ -266,11 +272,12 @@ commandAssoc = [
   ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
     Autonumber <$> autonumberTypeParser ),
-  ("create", LifeLine <$> pure Create <*> name),
-  ("destroy", LifeLine <$> pure  Destroy <*>  name),
-  ("hide", Hide <$> assocParser hiddenItemAssoc ),
-
-  ("deactivate", Deactivate <$> name),
+  ("create",  LifeLine <$> pure Create   <*> optional (assocParser subjectTypeAssoc) <*> name),
+  ("deactivate", Deactivate <$> name),  
+  ("destroy", LifeLine <$> pure Destroy <*>  pure Nothing <*> name),
+  ("footer", Footer <$> optional restOfLine),  
+  ("header", Header <$> optional restOfLine),
+  ("newpage", NewPage <$> optional restOfLine),    
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
   ("title", Title <$> restOfLine)
   ]

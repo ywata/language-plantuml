@@ -274,6 +274,11 @@ spec = do
       it "title" $ P.parse declCommand "" "title A\n" `shouldBe` (Right (Title "A"))
       it "title" $ P.parse declCommand "" "title A\\a\n" `shouldBe` (Right (Title "A\\a"))
       it "title" $ P.parseMaybe declCommand "title A" `shouldBe` Nothing
+      it "newpage" $ P.parse declCommand "" "newpage\n" `shouldBe` (Right (NewPage Nothing))
+      it "newpage" $ P.parse declCommand "" "newpage this is new\n" `shouldBe` (Right (NewPage (Just "this is new")))
+      it "header" $ P.parse declCommand "" "header\n" `shouldBe` (Right (Header Nothing))
+      it "header" $ P.parse declCommand "" "header newpage this is new\n" `shouldBe` (Right (Header (Just "newpage this is new")))
+      it "  header" $ P.parse declCommand "" "  header newpage this is new\n" `shouldBe` (Right (Header (Just "newpage this is new")))      
 
     describe "skin parameters" $ do
       it "responseMessageBelowArrow" $
@@ -296,7 +301,6 @@ spec = do
       it "name with alias" $ P.parse asName "" "name as n" `shouldBe` (Right (AliasedName (Nq "name") (Nq "n")))
       it "quoted name only" $ P.parse asName "" "\"name\"" `shouldBe` (Right (Name1 (Q "name")))
       it "quoted name with alias" $ P.parse asName "" "\"name\" as n " `shouldBe` (Right (AliasedName (Q "name") (Nq "n")))
-      
       
 
 
