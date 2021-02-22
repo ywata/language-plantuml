@@ -214,6 +214,7 @@ declNotes = go
         "right" -> sideNote tag (NoteRight shape)
         "over"  -> overNote tag (NoteOver shape)
         _ -> empty
+        
     sideNote :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> [T.Text] -> Notes) -> m Notes
     sideNote tag dcon = do
       sm <- lexeme (string ":") <|> lexeme (string "of")
@@ -223,8 +224,9 @@ declNotes = go
           return $ dcon Nothing note
         "of" -> do
           name <- optional (lexeme name)
-          note <- multiLine (isEndWith tag)
+          note <- linesTill' tag []
           return $ dcon name note
+          
     overNote :: MonadParsec Char T.Text m => T.Text -> (Name -> Maybe Name -> [T.Text] -> Notes) -> m Notes
     overNote tag dcon = do
       first <- lexeme name
@@ -235,7 +237,7 @@ declNotes = go
           note <- oneLine
           return $ dcon first second note
         _ -> do
-          note <- multiLine (isEndWith tag)
+          note <- linesTill' tag []
           return $ dcon first second note
     
         

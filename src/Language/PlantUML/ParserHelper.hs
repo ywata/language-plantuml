@@ -106,7 +106,7 @@ restOfLine = T.pack <$> manyTill printChar endOfLine
 isContinueLine :: T.Text -> Bool
 isContinueLine = T.isSuffixOf "\\"
 -}
-
+{-
 multiLine :: MonadParsec Char T.Text m => (T.Text -> Bool) -> m [T.Text]
 multiLine = multiLine' []
 
@@ -117,7 +117,7 @@ multiLine' xs prep = do
     return (reverse xs)
   else
     multiLine' (l:xs) prep
-
+-}
 
 
 --miscParsers :: MonadParsec Char T.Text m => [(String, m Command)]
