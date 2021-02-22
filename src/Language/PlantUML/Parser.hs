@@ -291,7 +291,7 @@ titleParser :: MonadParsec Char T.Text m => m Command
 titleParser = do
   t <- reserved' "title"
   r <- restOfLine
-  if trace(show r) r == "" then
+  if  r == "" then
     Title <$> T.concat <$> linesTill' "title" [r]
     else
     let res = P.parseMaybe (many space1) r in
