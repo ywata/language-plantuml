@@ -302,7 +302,8 @@ titleParser = do
       Nothing ->  return $ Title r
 
 end :: MonadParsec Char T.Text m => T.Text -> m ()
-end text = reserved' "end" >> (optional (char ' ')) >> reserved text >> pure ()
+end text = (reserved' "end" >> (char ' ') >> reserved text >> pure ())
+  <|> (reserved' (T.append "end" text) >> pure())
 
 linesTill' ::MonadParsec Char T.Text m => T.Text -> [T.Text]  -> m [T.Text]
 linesTill' txt xs = do
