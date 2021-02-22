@@ -8,7 +8,7 @@ module Language.PlantUML
   , PlantUML(..)
   , LifeLineOp(..)  
   , Name(..)
-
+  , NoteShape(..)
   , Stereotype(..)
   , Subject(..)
   , SubjectType(..)

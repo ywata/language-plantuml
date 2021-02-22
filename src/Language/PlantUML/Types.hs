@@ -17,7 +17,7 @@ data AliasedName = Name1 Name
   deriving (Eq, Show)
 type Order = Integer
 
-data SubjectType = Participant' | Actor' | Boundary' | Control' | Entity' | Database' | Collections' | Queue'
+data SubjectType = Participant | Actor | Boundary | Control | Entity | Database | Collections | Queue
   deriving (Eq, Show, Enum, Bounded)
 
 data Subject where
@@ -39,7 +39,7 @@ data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
 data Arr = Arr (Maybe T.Text) Shaft (Maybe T.Text)
   deriving(Show, Eq)
 
-data DefinedColor = Red | Blue | Yellow | Black | White
+data DefinedColor = Black | Blue | DarkSalmon | DeepSkyBlue | LightBlue | Red  | Yellow |White
   deriving (Eq, Show, Enum, Bounded)
 
 data Color where
@@ -53,10 +53,13 @@ data Arrow where
   Return :: Maybe T.Text -> Arrow
   deriving (Eq, Show)
 
+data NoteShape = Note |RNote | HNote
+  deriving (Eq, Show, Enum, Bounded)
+
 data Notes where
-  NoteLeft  :: Maybe Name -> [T.Text] -> Notes
-  NoteRight :: Maybe Name -> [T.Text] -> Notes
-  NoteOver  :: Name -> Maybe Name -> [T.Text] -> Notes
+  NoteLeft  :: NoteShape -> Maybe Name -> [T.Text] -> Notes
+  NoteRight :: NoteShape -> Maybe Name -> [T.Text] -> Notes
+  NoteOver  :: NoteShape -> Name -> Maybe Name -> [T.Text] -> Notes
   deriving (Eq, Show)
 
 data Declaration where

@@ -14,7 +14,8 @@ import Data.Char (isSpace)
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Text.Megaparsec
+import Text.Megaparsec hiding(parse, parseMaybe)
+import qualified Text.Megaparsec as M (parse, parseMaybe)
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -94,14 +95,14 @@ stereoRight (tmp, mark) ts = do
   
 
 declSubject :: MonadParsec Char T.Text m => m Subject
-declSubject = choice $ map pa [("participant", Subject Participant'),
-                               ("actor", Subject Actor'),
-                               ("boundary", Subject Boundary'),
-                               ("control", Subject Control'),
-                               ("entity", Subject Entity'),
-                               ("database", Subject Database'),
-                               ("collections", Subject Collections'),
-                               ("queue", Subject Queue')]
+declSubject = choice $ map pa [("participant", Subject Participant),
+                               ("actor", Subject Actor),
+                               ("boundary", Subject Boundary),
+                               ("control", Subject Control),
+                               ("entity", Subject Entity),
+                               ("database", Subject Database),
+                               ("collections", Subject Collections),
+                               ("queue", Subject Queue)]
   
   where
     pa :: MonadParsec Char T.Text m =>
@@ -201,15 +202,20 @@ declNotes = go
   where
     go :: MonadParsec Char T.Text m => m Notes
     go = do
-      lexeme $ reserved "note"
+      tag <- reserved "note" <|> reserved "rnote" <|> reserved "hnote"
       lro <- try (lexeme $ reserved "left") <|> (lexeme $ reserved "right" <|> (lexeme $ reserved "over"))
+      let shape = case tag of
+            "note"  -> Note
+            "rnote" -> RNote
+            "hnote" -> HNote
+            _ -> Note -- This never happen.
       case lro of
-        "left"  -> sideNote NoteLeft
-        "right" -> sideNote NoteRight
-        "over" -> overNote NoteOver
+        "left"  -> sideNote tag (NoteLeft shape)
+        "right" -> sideNote tag (NoteRight shape)
+        "over"  -> overNote tag (NoteOver shape)
         _ -> empty
-    sideNote :: MonadParsec Char T.Text m => (Maybe Name -> [T.Text] -> Notes) -> m Notes
-    sideNote dcon = do
+    sideNote :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> [T.Text] -> Notes) -> m Notes
+    sideNote tag dcon = do
       sm <- lexeme (string ":") <|> lexeme (string "of")
       case sm of
         ":" -> do
@@ -217,10 +223,10 @@ declNotes = go
           return $ dcon Nothing note
         "of" -> do
           name <- optional (lexeme name)
-          note <- multiLine (isEndWith "note")
+          note <- multiLine (isEndWith tag)
           return $ dcon name note
-    overNote :: MonadParsec Char T.Text m => (Name -> Maybe Name -> [T.Text] -> Notes) -> m Notes
-    overNote dcon = do
+    overNote :: MonadParsec Char T.Text m => T.Text -> (Name -> Maybe Name -> [T.Text] -> Notes) -> m Notes
+    overNote tag dcon = do
       first <- lexeme name
       second <- optional (lexeme (char ',') *> lexeme name)
       mark <- (string ":") <|> (T.pack <$> manyTill printChar endOfLine)
@@ -229,10 +235,10 @@ declNotes = go
           note <- oneLine
           return $ dcon first second note
         _ -> do
-          note <- multiLine (isEndWith "note")
+          note <- multiLine (isEndWith tag)
           return $ dcon first second note
     
-       
+        
 -- Group
 -- Grouping things in Declaration allows us nested structure.
 declGrouping :: MonadParsec Char T.Text m => m Grouping
@@ -258,7 +264,7 @@ groupingAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFrom
 
 ---- Commands
 declCommand :: MonadParsec Char T.Text m => MonadParsec Char T.Text m => m Command
-declCommand = assocParser commandAssoc <|> delayParser <|> skinParamParser
+declCommand = assocParser commandAssoc <|> delayParser <|> skinParamParser <|> titleParser
 
 hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
 hiddenItemAssoc = mkAssoc
@@ -272,16 +278,41 @@ commandAssoc = [
   ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
     Autonumber <$> autonumberTypeParser ),
-  ("create",  LifeLine <$> pure Create   <*> optional (assocParser subjectTypeAssoc) <*> name),
+  ("create",  LifeLine <$> pure Create <*> optional (assocParser subjectTypeAssoc) <*> name),
   ("deactivate", Deactivate <$> name),  
   ("destroy", LifeLine <$> pure Destroy <*>  pure Nothing <*> name),
   ("footer", Footer <$> optional restOfLine),  
   ("header", Header <$> optional restOfLine),
   ("newpage", NewPage <$> optional restOfLine),    
-  ("hide", Hide <$> assocParser hiddenItemAssoc ),
-  ("title", Title <$> restOfLine)
-  ]
+  ("hide", Hide <$> assocParser hiddenItemAssoc )]
 
+  
+titleParser :: MonadParsec Char T.Text m => m Command
+titleParser = do
+  t <- reserved' "title"
+  r <- restOfLine
+  if trace(show r) r == "" then
+    Title <$> T.concat <$> linesTill' "title" [r]
+    else
+    let res = P.parseMaybe (many space1) r in
+    case trace (show (t, r, res)) res of
+      Just _ -> Title <$> T.concat <$> linesTill' "title" [r]
+      Nothing ->  return $ Title r
+
+end :: MonadParsec Char T.Text m => T.Text -> m ()
+end text = reserved' "end" >> (optional (char ' ')) >> reserved text >> pure ()
+
+linesTill' ::MonadParsec Char T.Text m => T.Text -> [T.Text]  -> m [T.Text]
+linesTill' txt xs = do
+  r <- restOfLine
+  let res =  P.parseMaybe (end txt) (trace ("+" ++ show r) r)
+  case res of
+    Just _ -> do
+      return $ reverse xs
+    Nothing -> linesTill' txt (r : xs)
+
+
+  
 autonumberTypeParser :: MonadParsec Char T.Text m => m AutonumberType
 autonumberTypeParser =  (reserved "stop" >> pure Stop) 
                         <|> (Resume <$> (reserved "resume" *> optional (lexeme L.decimal)) <*> optional quotedName)

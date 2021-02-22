@@ -26,7 +26,9 @@ import Language.PlantUML.Parser
       skinParamAssoc,
       skinParamParser,
       stereotype,
-      arrow
+      arrow,
+      linesTill',
+      end
     )
 
 import Test.Hspec ( describe, it, shouldBe, Spec )
@@ -86,39 +88,39 @@ spec = do
 
     describe "declSubject" $ do
       it "participant w/o alias" $ P.parse declSubject "" "participant abc"
-        `shouldBe` (Right (Subject Participant' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Participant (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "participant w alias" $ P.parse declSubject "" ("participant abc as a")
-        `shouldBe` (Right (Subject Participant' (AliasedName (Nq "abc") (Nq "a")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Participant (AliasedName (Nq "abc") (Nq "a")) Nothing Nothing Nothing))
       -- more variation
       it "actor w/o alias" $ P.parse declSubject "" "actor abc"
-        `shouldBe` (Right (Subject Actor' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Actor (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "boundary w/o alias" $ P.parse declSubject "" "boundary abc"
-        `shouldBe` (Right (Subject Boundary' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Boundary (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "control w/o alias" $ P.parse declSubject "" "control abc"
-        `shouldBe` (Right (Subject Control' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Control (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "entity w/o alias" $ P.parse declSubject "" "entity abc"
-        `shouldBe` (Right (Subject Entity' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Entity (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "database w/o alias" $ P.parse declSubject "" "database abc"
-        `shouldBe` (Right (Subject Database' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Database (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "database w/o alias" $ P.parse declSubject "" "database abc"
-        `shouldBe` (Right (Subject Database' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Database (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "collections w/o alias" $ P.parse declSubject "" "collections abc"
-        `shouldBe` (Right (Subject Collections' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Collections (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "queue w/o alias" $ P.parse declSubject "" "queue abc"
-        `shouldBe` (Right (Subject Queue' (Name1 (Nq "abc")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Queue (Name1 (Nq "abc")) Nothing Nothing Nothing))
       it "consective actors" $ P.parse declSubject "" "participant participant as Foo \nactor actor as Foo1"
-        `shouldBe` (Right (Subject Participant' (AliasedName (Nq "participant") (Nq "Foo")) Nothing Nothing Nothing))
+        `shouldBe` (Right (Subject Participant (AliasedName (Nq "participant") (Nq "Foo")) Nothing Nothing Nothing))
         
       it "actor with order" $ P.parse declSubject "" "actor A order 10"
-        `shouldBe` (Right (Subject Actor' (Name1 (Nq "A")) Nothing (Just 10) Nothing))
+        `shouldBe` (Right (Subject Actor (Name1 (Nq "A")) Nothing (Just 10) Nothing))
       it "actor with color" $ P.parse declSubject "" "actor A #red"
-        `shouldBe` (Right (Subject Actor' (Name1 (Nq "A")) Nothing Nothing (Just (Color Red))))
+        `shouldBe` (Right (Subject Actor (Name1 (Nq "A")) Nothing Nothing (Just (Color Red))))
       it "actor with color and order" $ P.parse declSubject "" "actor A order 10 #red"
-        `shouldBe` (Right (Subject Actor' (Name1 (Nq "A")) Nothing (Just 10) (Just (Color Red))))
+        `shouldBe` (Right (Subject Actor (Name1 (Nq "A")) Nothing (Just 10) (Just (Color Red))))
       it "actor with alias, color and color" $ P.parse declSubject "" "actor A as Foo2 order 10 #red"
-        `shouldBe` (Right (Subject Actor' (AliasedName (Nq "A")  (Nq "Foo2")) Nothing (Just 10) (Just (Color Red))))
+        `shouldBe` (Right (Subject Actor (AliasedName (Nq "A")  (Nq "Foo2")) Nothing (Just 10) (Just (Color Red))))
       it "participant with stereotype " $ P.parse declSubject "" "participant Bob << (C,#ADD1B2) >>\n" -- 
-        `shouldBe` (Right (Subject Participant' (Name1 (Nq "Bob")) (Just (Stereotype " (C,#ADD1B2) ")) Nothing Nothing))
+        `shouldBe` (Right (Subject Participant (Name1 (Nq "Bob")) (Just (Stereotype " (C,#ADD1B2) ")) Nothing Nothing))
 {-
     describe "(manyTill printChar rightEnd)" $ do
       it "manyTill:" $ P.parse (manyTill printChar rightEnd) "" "first >> "
@@ -209,19 +211,28 @@ spec = do
       it "--->" $ P.parse arrow "" "--->" `shouldBe` (Right (Arr Nothing (Shaft (Just "---") Nothing Nothing) (Just ">")))
       it "<--->" $ P.parse arrow "" "<--->" `shouldBe` (Right (Arr (Just "<") (Shaft (Just "---") Nothing Nothing) (Just ">")))      
 
+
+
+
     describe "notes" $ do
       it "note left oneline" $ P.parse declNotes "" ("note left : right\n")
-        `shouldBe` (Right (NoteLeft Nothing ["right"]))
+        `shouldBe` (Right (NoteLeft Note Nothing ["right"]))
       it "note right oneline" $ P.parse declNotes "" ("note right :left\n")
-        `shouldBe` (Right (NoteRight Nothing ["left"]))
+        `shouldBe` (Right (NoteRight Note Nothing ["left"]))
       it "note over oneline 1" $ P.parse declNotes "" ("note over A : A\n")
-        `shouldBe` (Right (NoteOver (Nq "A") Nothing [" A"]))      
+        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing [" A"]))      
       it "note over oneline 2" $ P.parse declNotes "" ("note over A, B :A B\n")
-        `shouldBe` (Right (NoteOver (Nq "A") (Just (Nq "B")) ["A B"]))
+        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) ["A B"]))
       it "note over twolines 1" $ P.parse declNotes "" ("note over A of\nA B\nend note\n")
-        `shouldBe` (Right (NoteOver (Nq "A") Nothing ["A B"]))
+        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing ["A B"]))
       it "note over twolines 2" $ P.parse declNotes "" ("note over A, B of\nA B\nend note\n")
-        `shouldBe` (Right (NoteOver (Nq "A") (Just (Nq "B")) ["A B"]))
+        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) ["A B"]))
+      it "rnote left oneline" $ P.parse declNotes "" ("rnote left : right\n")
+        `shouldBe` (Right (NoteLeft RNote Nothing ["right"]))
+      it "hnote left oneline" $ P.parse declNotes "" ("hnote left : right\n")
+        `shouldBe` (Right (NoteLeft HNote Nothing ["right"]))
+
+
 {-
     describe "doubleLabels" $ do
       it "one label" $ do
@@ -271,14 +282,33 @@ spec = do
       it "autoactivate Off" $ P.parse declCommand "" "autoactivate off" `shouldBe` (Right (AutoActivate Off))
       it "activate" $ P.parse declCommand "" "activate A" `shouldBe` (Right (Activate (Nq "A") Nothing))
       it "deactivate" $ P.parse declCommand "" "deactivate B" `shouldBe` (Right (Deactivate (Nq "B")))
-      it "title" $ P.parse declCommand "" "title A\n" `shouldBe` (Right (Title "A"))
-      it "title" $ P.parse declCommand "" "title A\\a\n" `shouldBe` (Right (Title "A\\a"))
+      it "title" $ P.parse declCommand "" "title A\n" `shouldBe` (Right (Title " A"))
+      it "title" $ P.parse declCommand "" "title A\\a\n" `shouldBe` (Right (Title " A\\a"))
       it "title" $ P.parseMaybe declCommand "title A" `shouldBe` Nothing
+      it "multiple line title" $ P.parse declCommand "" "title\nab c\nend title\n" `shouldBe` (Right (Title "ab c"))
+      it "multiple line title" $ P.parse declCommand "" "title \na\nb\nend title\n" `shouldBe` (Right (Title " ab"))
+      
       it "newpage" $ P.parse declCommand "" "newpage\n" `shouldBe` (Right (NewPage Nothing))
       it "newpage" $ P.parse declCommand "" "newpage this is new\n" `shouldBe` (Right (NewPage (Just "this is new")))
       it "header" $ P.parse declCommand "" "header\n" `shouldBe` (Right (Header Nothing))
       it "header" $ P.parse declCommand "" "header newpage this is new\n" `shouldBe` (Right (Header (Just "newpage this is new")))
       it "  header" $ P.parse declCommand "" "  header newpage this is new\n" `shouldBe` (Right (Header (Just "newpage this is new")))      
+
+      it "create name" $ P.parse declCommand "" ("create name\n")
+        `shouldBe` (Right (LifeLine Create Nothing (Nq "name")))
+      it "create control name" $ P.parse declCommand "" ("create control name\n")
+        `shouldBe` (Right (LifeLine Create (Just Control) (Nq "name")))
+
+    describe "end" $ do
+      it "end title" $
+        P.parse (end "title") "" "end title"
+        `shouldBe` (Right ())
+        
+    describe "linesTill" $ do
+      it "end title" $
+        P.parse (linesTill' "title" []) "" "\nend title\n"
+        `shouldBe` (Right [""])
+
 
     describe "skin parameters" $ do
       it "responseMessageBelowArrow" $
@@ -309,9 +339,9 @@ spec = do
       it "@startuml" $ P.parseMaybe plantUML "@startuml" `shouldBe` Nothing
       it "@startuml and @enduml" $ P.parse plantUML "" "@startuml@enduml" `shouldBe` (Right (PlantUML []))
       it "@startuml and @enduml" $ P.parse plantUML "" "@startuml actor A @enduml"
-        `shouldBe` (Right (PlantUML [SubjectDef (Subject Actor' (Name1 (Nq "A")) Nothing Nothing Nothing)]))
+        `shouldBe` (Right (PlantUML [SubjectDef (Subject Actor (Name1 (Nq "A")) Nothing Nothing Nothing)]))
       it "@startuml and @enduml" $ P.parse plantUML "" "@startuml actor A as a A -> B : aaa\n@enduml"
-        `shouldBe` (Right (PlantUML [SubjectDef (Subject Actor' (AliasedName (Nq "A") (Nq "a")) Nothing Nothing Nothing),
+        `shouldBe` (Right (PlantUML [SubjectDef (Subject Actor (AliasedName (Nq "A") (Nq "a")) Nothing Nothing Nothing),
                                      ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " aaa"))]))
 
 

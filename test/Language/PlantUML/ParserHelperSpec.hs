@@ -20,6 +20,7 @@ import qualified Language.PlantUML.ParserHelper as P
    pairParser,
    quotedName,
    reserved,
+   reserved',
    reservedSymbol,
    restOfLine,
    spaceConsumer) 
@@ -30,6 +31,10 @@ s1 = space1
 
 spec :: Spec
 spec = do
+    describe "printChar" $ do
+      it "space" $ P.parse (many printChar) "" "   " `shouldBe` (Right "   ")
+    describe "printChar" $ do
+      it "many printChar drops newline" $ P.parse (many printChar) "" " {}()<>! \n" `shouldBe` (Right " {}()<>! ")
     describe "nonQuotedName" $ do
       it "alphabet" $ P.parseMaybe (P.nonQuotedName) "ab" `shouldBe` (Just "ab")
       it "日本語" $ P.parseMaybe (P.nonQuotedName) "日本語" `shouldBe` (Just "日本語")
@@ -44,6 +49,7 @@ spec = do
       it "line comment" $ P.parseMaybe P.quotedName "\"ab 'aaaaaa\"" `shouldBe` (Just "ab 'aaaaaa")
 
     describe "reserved" $ do
+      it "accepts newline" $ P.parseMaybe (P.reserved "as") "as  \n" `shouldBe` (Just "as")
       it "accepts" $ P.parseMaybe (P.reserved "as") "as" `shouldBe` (Just "as")
       it "accepts two P.reserved"  $ P.parse (P.reserved "as" *> P.spaceConsumer *> P.reserved "is") "" "as is" `shouldBe`(Right "is")
       it "reject" $ P.parseMaybe (P.reserved "as") "asis" `shouldBe` Nothing
@@ -68,6 +74,20 @@ spec = do
         P.parse P.restOfLine "" "group\n" `shouldBe` (Right "group")
       it "1 continuation line" $ do
         P.parse P.restOfLine "" "group\\\nasdf\n" `shouldBe` (Right "groupasdf")
+      it "space" $ do
+        P.parse P.restOfLine "" " \n" `shouldBe` (Right " ")
+      it "empty line" $ do
+        P.parse P.restOfLine "" "\n" `shouldBe` (Right "")
+      it "space and string" $ do
+        P.parse P.restOfLine "" " string\n" `shouldBe` (Right " string")
+    describe "reserved' and restOfLine" $ do        
+      it "reserved' empty + restOfLine" $ do
+        P.parse (P.reserved' "title" >> P.restOfLine) "" "title\n" `shouldBe` (Right "")
+      it "reserved' space+ restOfLine" $ do
+        P.parse (P.reserved' "title" >> P.restOfLine) "" "title \n" `shouldBe` (Right " ")
+      it "reserved' string + restOfLine" $ do
+        P.parse (P.reserved' "title" >> P.restOfLine) "" "title string\n" `shouldBe` (Right " string")
+
 
     describe "ident" $ do
       it "idnet" $ do

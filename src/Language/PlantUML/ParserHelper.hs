@@ -46,10 +46,14 @@ many1 p = do
   return (c : cs)
 
 ----
-ident :: MonadParsec Char T.Text m => m T.Text
-ident = (\h t -> T.pack (h:t))
+ident' :: MonadParsec Char T.Text m => m T.Text
+ident' = (\h t -> T.pack (h:t))
         <$> (letterChar <|> char '@') -- should be alphabet only
-        <*> lexeme (many (alphaNumChar <|> char '_'))
+        <*> (many (alphaNumChar <|> char '_'))
+
+ident :: MonadParsec Char T.Text m => m T.Text
+ident = lexeme ident'
+
 
 nonQuotedName :: MonadParsec Char T.Text m => m T.Text
 nonQuotedName = T.pack <$> lexeme (many1 (letterChar <|> digitChar))
@@ -58,12 +62,16 @@ quotedName :: MonadParsec Char T.Text m => m T.Text
 quotedName = T.pack <$> lexeme ((char '"' >> manyTill printChar (char '"')))
 
 
-
 --- Keyword name of elements of diagram
+--- non lexeme version of reserved
+reserved' :: MonadParsec Char T.Text m => T.Text -> m T.Text
+reserved' txt = do
+  n <- lookAhead ident'
+  if n == txt then ident' else empty
 reserved :: MonadParsec Char T.Text m => T.Text -> m T.Text
-reserved txt = do
-  n <- lookAhead ident
-  if n == txt then lexeme ident else empty
+reserved txt = lexeme (reserved' txt)
+
+
 
 {-- TODO: This may need update. -}
 reservedSymbol :: MonadParsec Char T.Text m => T.Text -> m T.Text
@@ -109,6 +117,7 @@ multiLine' xs prep = do
     return (reverse xs)
   else
     multiLine' (l:xs) prep
+
 
 
 --miscParsers :: MonadParsec Char T.Text m => [(String, m Command)]
