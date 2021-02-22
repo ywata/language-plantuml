@@ -15,13 +15,14 @@ data AliasedName = Name1 Name
                  | AliasedName Name Name
 --                 | NoName
   deriving (Eq, Show)
-
-
-
 type Order = Integer
 
+data SubjectType = Participant' | Actor' | Boundary' | Control' | Entity' | Database' | Collections' | Queue'
+  deriving (Eq, Show, Enum, Bounded)
+
 data Subject where
-  Participant :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
+  Subject     :: SubjectType -> AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
+{-  Participant :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
   Actor       :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
   Boundary    :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
   Control     :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
@@ -29,6 +30,7 @@ data Subject where
   Database    :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
   Collections :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
   Queue       :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
+-}
   deriving (Eq, Show)
 
 data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
@@ -109,15 +111,20 @@ data AutonumberType = Start (Maybe Integer) (Maybe Integer) (Maybe T.Text)
                     | Resume (Maybe Integer) (Maybe T.Text)
                     | Stop 
   deriving (Eq, Show)
+
+data LifeLineOp = Create | Destroy
+  deriving (Eq, Show)
+
 data Command where
   Activate :: Name -> Maybe Color -> Command  -- implemented
   AutoActivate :: OnOff -> Command
   Autonumber :: AutonumberType -> Command -- implemented
-  Create :: Name -> Command
+--  Create :: Name -> Command
   Deactivate :: Name -> Command
   Delay :: Maybe T.Text -> Command
-  Destroy :: Name -> Command
+--  Destroy :: Name -> Command
   Hide :: HiddenItem -> Command
+  LifeLine :: LifeLineOp -> Name -> Command
   NewPage :: T.Text -> Command
   Title :: T.Text -> Command
   Divider :: T.Text -> Command

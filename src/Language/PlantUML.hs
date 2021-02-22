@@ -6,10 +6,12 @@ module Language.PlantUML
   , Arr(..)
   , AutonumberType(..)
   , PlantUML(..)
+  , LifeLineOp(..)  
   , Name(..)
 
   , Stereotype(..)
   , Subject(..)
+  , SubjectType(..)
   , DefinedColor(..)
   , Color(..)
   , Arrow(..)

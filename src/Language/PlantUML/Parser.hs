@@ -94,14 +94,14 @@ stereoRight (tmp, mark) ts = do
   
 
 declSubject :: MonadParsec Char T.Text m => m Subject
-declSubject = choice $ map pa [("participant", Participant),
-                               ("actor", Actor),
-                               ("boundary", Boundary),
-                               ("control", Control),
-                               ("entity", Entity),
-                               ("database", Database),
-                               ("collections", Collections),
-                               ("queue", Queue)]
+declSubject = choice $ map pa [("participant", Subject Participant'),
+                               ("actor", Subject Actor'),
+                               ("boundary", Subject Boundary'),
+                               ("control", Subject Control'),
+                               ("entity", Subject Entity'),
+                               ("database", Subject Database'),
+                               ("collections", Subject Collections'),
+                               ("queue", Subject Queue')]
   
   where
     pa :: MonadParsec Char T.Text m =>
@@ -266,8 +266,8 @@ commandAssoc = [
   ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
     Autonumber <$> autonumberTypeParser ),
-  ("create", Create <$> name),
-  ("destroy", Destroy <$> name),
+  ("create", LifeLine <$> pure Create <*> name),
+  ("destroy", LifeLine <$> pure  Destroy <*>  name),
   ("hide", Hide <$> assocParser hiddenItemAssoc ),
 
   ("deactivate", Deactivate <$> name),
