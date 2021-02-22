@@ -295,7 +295,7 @@ titleParser = do
     Title <$> T.concat <$> linesTill' "title" [r]
     else
     let res = P.parseMaybe (many space1) r in
-    case trace (show (t, r, res)) res of
+    case res of
       Just _ -> Title <$> T.concat <$> linesTill' "title" [r]
       Nothing ->  return $ Title r
 
@@ -305,7 +305,7 @@ end text = reserved' "end" >> (optional (char ' ')) >> reserved text >> pure ()
 linesTill' ::MonadParsec Char T.Text m => T.Text -> [T.Text]  -> m [T.Text]
 linesTill' txt xs = do
   r <- restOfLine
-  let res =  P.parseMaybe (end txt) (trace ("+" ++ show r) r)
+  let res =  P.parseMaybe (end txt) r
   case res of
     Just _ -> do
       return $ reverse xs
