@@ -8,6 +8,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import qualified Data.Text as T
 
+--parse :: Parsec Char T.Text a -> String -> T.Text -> Either (ParseErrorBundle T.Text Char) a
 parse :: Parsec Char T.Text a -> String -> T.Text -> Either (ParseErrorBundle T.Text Char) a
 parse p txt = M.parse p txt . T.pack . dropContinuationLine . T.unpack
 
@@ -131,13 +132,14 @@ multiLine' xs prep = do
 --miscParsers :: MonadParsec Char T.Text m => [(String, m Command)]
 --miscParsers = [(Autonumber, triple (optional Nothing(lexeme L.
 
-
+{-
 isEndWith endKey str = case res of
    Just _ -> True
    _ -> False
    where
+     res :: MonadParsec Char T.Text m => m ()
      res = parseMaybe (spaceConsumer *> string (endMarker endKey) *> spaceConsumer) str
-
+-}
 endMarker :: T.Text -> T.Text
 endMarker endKey = T.append  "end " endKey
 

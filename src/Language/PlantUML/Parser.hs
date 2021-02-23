@@ -46,6 +46,7 @@ decls = (SubjectDef <$> declSubject)
       <|> (NotesDef <$> declNotes)
       <|> (GroupingDef <$> declGrouping)
       <|> (CommandDef <$> declCommand)
+      <|> (BoxDef <$> declBox)
         
 
 dividerParser :: MonadParsec Char T.Text m => m Command
@@ -290,6 +291,15 @@ declGrouping = do
       case e of
         "else" -> go k l (decls: xs)
         _ -> return $ Grouping k l (reverse (decls : xs))
+
+declBox :: MonadParsec Char T.Text m => m Box
+declBox = do
+  reserved "box"
+  n <- optional name
+  c <- optional color
+  ds <- manyTill declaration (end "box")
+  return $ Box n c ds
+
     
 doubleLabels :: MonadParsec Char T.Text m => m (T.Text, T.Text)
 doubleLabels = return ("not yet", "implemented")
@@ -353,7 +363,6 @@ linesTill' txt xs = do
     Just _ -> do
       return $ reverse xs
     Nothing -> linesTill' txt (r : xs)
-
 
   
 autonumberTypeParser :: MonadParsec Char T.Text m => m AutonumberType

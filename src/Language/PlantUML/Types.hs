@@ -69,6 +69,7 @@ data Declaration where
   NotesDef      :: Notes      -> Declaration
   GroupingDef   :: Grouping   -> Declaration
   CommandDef    :: Command    -> Declaration
+  BoxDef        :: Box        -> Declaration
   deriving (Eq, Show)
 
 data Stereotype where
@@ -102,7 +103,10 @@ data Grouping where
   -- Horizontal grouping provide optional grouping using else keyword,
   -- multiple Declaration groups are allowed.
   Grouping :: GroupKind -> T.Text -> [[Declaration]] -> Grouping
-  Box :: [Declaration] -> [T.Text] -> Grouping
+  deriving (Eq, Show)
+
+data Box where
+  Box :: Maybe Name -> Maybe Color -> [Declaration] -> Box
   deriving (Eq, Show)
 
 data HiddenItem = FootBox | Unlinked

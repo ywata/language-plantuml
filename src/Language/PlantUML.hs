@@ -5,6 +5,7 @@ module Language.PlantUML
   , AliasedName(..)
   , Arr(..)
   , AutonumberType(..)
+  , Box(..)
   , PlantUML(..)
   , LifeLineOp(..)  
   , Name(..)
