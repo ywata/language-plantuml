@@ -39,7 +39,7 @@ data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
 data Arr = Arr (Maybe T.Text) Shaft (Maybe T.Text)
   deriving(Show, Eq)
 
-data DefinedColor = Black | Blue | DarkSalmon | DeepSkyBlue | LightBlue | Red  | Yellow |White
+data DefinedColor = Aqua | Black | Blue | DarkSalmon | DeepSkyBlue | DodgerBlue | LightBlue | Red  | Yellow |White
   deriving (Eq, Show, Enum, Bounded)
 
 data Color where

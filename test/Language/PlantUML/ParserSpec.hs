@@ -368,6 +368,10 @@ spec = do
       it "two entries" $
         P.parse skinParametersParser "" "skinparam  sequence \n { \nmaxMessageSize 20 \n maxMessageSize 10\n } \n"
         `shouldBe` (Right (SkinParameters [MaxMessageSize 20, MaxMessageSize 10]))
+      it "ParticipantBorderColor DeepSkyBlue" $
+        P.parse skinParametersParser "" "skinparam  sequence \n { \nParticipantBorderColor DeepSkyBlue\n } \n"
+        `shouldBe` (Right (SkinParameters [MaxMessageSize 20, MaxMessageSize 10]))
+
 
     describe "asName" $ do
       it "name only" $ P.parse asName "" "name" `shouldBe` (Right (Name1 (Nq "name")))

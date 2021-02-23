@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 module Language.PlantUML.Parser  where
@@ -216,6 +215,15 @@ color = try definedColor <|> try hexColor
     definedColor :: MonadParsec Char T.Text m => m Color    
     definedColor = Color <$> (char '#' *> assocParser colorAssoc)
 
+color' ::  MonadParsec Char T.Text m => m Color
+color' = try definedColor <|> try hexColor 
+  where
+    hexColor :: MonadParsec Char T.Text m => m Color
+    hexColor = HexColor . T.pack <$> (char '#' *> (many1 hexDigitChar))
+    definedColor :: MonadParsec Char T.Text m => m Color    
+    definedColor = Color <$> (assocParser colorAssoc)
+
+
 colorAssoc :: MonadParsec Char T.Text m => [(T.Text, m DefinedColor)]
 colorAssoc = mkAssoc
 
@@ -423,38 +431,38 @@ skinParamParser = SkinParameters . (:[]) <$> (lexeme (reserved "skinparam") *> l
 
 
 skinParametersParser :: MonadParsec Char T.Text m => m Command
-skinParametersParser =
+skinParametersParser = 
   SkinParameters <$> (reserved "skinparam" *> reserved "sequence" *> 
                        between (lexeme' (char '{')) (lexeme' (char '}')) (many (lexeme' (assocParser skinParamAssoc))))
 
 
 skinParamAssoc :: MonadParsec Char T.Text m => [(T.Text, m SkinParam)]
 skinParamAssoc = [
-    ("responseMessageBelowArrow", ResponseMessageBelowArrow <$> assocParser boolAssoc),
-    ("maxMessageSize", MaxMessageSize <$> lexeme L.decimal),
+    ("actorBackgroundColor", ActorBackgroundColor <$> lexeme color'),
+    ("actorFontColor", ActorFontColor <$> lexeme color'),
+    ("actorFontSize", ActorFontSize <$> lexeme L.decimal),
+    ("actorFontName", ActorFontName <$> (T.pack <$> lexeme (many1 letterChar))),
+    ("actorBorderColor", ActorBorderColor <$> lexeme color'),  
+    ("arrowColor", ArrowColor <$> lexeme color'),
+    ("backgroundColor", BackgroundColor <$> lexeme color'),
+    ("boxPadding", BoxPadding <$> lexeme L.decimal),    
     ("guillemet", Guillemet <$> assocParser boolAssoc),
-    ("sequenceArrowThickness",  SequenceArrowThickness <$> lexeme L.decimal),
-    ("roundCorner", RoundCorner <$> lexeme L.decimal),
-    ("sequenceParticipant", SequenceParticipant <$> assocParser sequenceParticipantTypeAssoc),
-    ("backgroundColor", BackgroundColor <$> lexeme color),
     ("handwritten", Handwritten <$> assocParser boolAssoc),
-    ("participantPadding", ParticipantPadding <$> lexeme L.decimal),
-    ("boxPadding", BoxPadding <$> lexeme L.decimal),
     ("lifelineStrategy", LifelineStrategy <$> assocParser lifelineStrategyTypeAssoc),
-    ("style", Style <$> assocParser styleTypeAssoc),
-    ("arrowColor", ArrowColor <$> lexeme color),
-    ("actorBorderColor", ActorBorderColor <$> lexeme color),
-    ("lifeLineBorderColor", LifeLineBorderColor <$> lexeme color),
+    ("lifeLineBorderColor", LifeLineBorderColor <$> lexeme color'),
     ("lifeLineBackgroundColor", LifeLineBackgroundColor <$> lexeme color),
-    ("participantBorderColor", ParticipantBorderColor <$> lexeme color),
-    ("participantBackgroundColor", ParticipantBackgroundColor <$> lexeme color),
---    ("participantFontName", ParticipantFontName <$> lexame string),
+    ("maxMessageSize", MaxMessageSize <$> lexeme L.decimal),
+    ("participantBorderColor", ParticipantBorderColor <$> lexeme color'),
+    ("participantPadding", ParticipantPadding <$> lexeme L.decimal),    
+    ("participantBackgroundColor", ParticipantBackgroundColor <$> lexeme color'),
+    ("participantFontName", ParticipantFontName <$> (T.pack <$> lexeme (many1 letterChar))),
     ("participantFontSize", ParticipantFontSize <$> lexeme L.decimal),
-    ("participantFontColor", ParticipantFontColor <$> lexeme color),
-    ("actorBackgroundColor", ActorBackgroundColor <$> lexeme color),
-    ("actorFontColor", ActorFontColor <$> lexeme color),
-    ("actorFontSize", ActorFontSize <$> lexeme L.decimal)
---    ("actorFontName", ActorFontName <$> lexeme color)
+    ("participantFontColor", ParticipantFontColor <$> lexeme color'),
+    ("responseMessageBelowArrow", ResponseMessageBelowArrow <$> assocParser boolAssoc),    
+    ("roundCorner", RoundCorner <$> lexeme L.decimal),    
+    ("sequenceArrowThickness",  SequenceArrowThickness <$> lexeme L.decimal),
+    ("sequenceParticipant", SequenceParticipant <$> assocParser sequenceParticipantTypeAssoc),    
+    ("style", Style <$> assocParser styleTypeAssoc)
   ]
 
 
