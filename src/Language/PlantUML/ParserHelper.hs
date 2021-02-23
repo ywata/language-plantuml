@@ -98,12 +98,14 @@ pairParser (txt, p) = lexeme (reserved txt) *> p
 
 ----
 oneLine :: MonadParsec Char T.Text m => m [T.Text]
-oneLine = ((:[]) . T.pack) <$> manyTill printChar endOfLine
+oneLine = (:[]) <$> restOfLine
 
 ---- restOfLine treates continuation line or virtual one line
 
 restOfLine :: MonadParsec Char T.Text m => m T.Text
 restOfLine = T.pack <$> manyTill printChar endOfLine
+
+
 {- where
     restOfLine' :: MonadParsec Char T.Text m => [T.Text] -> m [T.Text]
     restOfLine' xs = do

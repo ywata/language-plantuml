@@ -220,27 +220,27 @@ spec = do
 
     describe "one line note" $ do
       it "note left oneline" $ P.parse declNotes "" ("note left : right\n")
-        `shouldBe` (Right (NoteLeft Note Nothing ["right"]))
+        `shouldBe` (Right (NoteLeft Note Nothing Nothing [" right"]))
       it "note right oneline" $ P.parse declNotes "" ("note right :left\n")
-        `shouldBe` (Right (NoteRight Note Nothing ["left"]))
+        `shouldBe` (Right (NoteRight Note Nothing Nothing ["left"]))
       it "note over oneline 1" $ P.parse declNotes "" ("note over A : A\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing [" A"]))      
+        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing Nothing [" A"]))      
       it "note over oneline 2" $ P.parse declNotes "" ("note over A, B :A B\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) ["A B"]))
+        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) Nothing ["A B"]))
       it "note over twolines 1" $ P.parse declNotes "" ("note over A of\nA B\nend note\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing ["A B"]))
+        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing Nothing ["A B"]))
       it "note over twolines 2" $ P.parse declNotes "" ("note over A, B of\nA B\nend note\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) ["A B"]))
+        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) Nothing ["A B"]))
       it "rnote left oneline" $ P.parse declNotes "" ("rnote left : right\n")
-        `shouldBe` (Right (NoteLeft RNote Nothing ["right"]))
+        `shouldBe` (Right (NoteLeft RNote Nothing Nothing [" right"]))
       it "hnote left oneline" $ P.parse declNotes "" ("hnote left : right\n")
-        `shouldBe` (Right (NoteLeft HNote Nothing ["right"]))
+        `shouldBe` (Right (NoteLeft HNote Nothing Nothing [" right"]))
 
     describe "multi line note" $ do
       it "note left multi" $ P.parse declNotes "" ("note left\nright\nend note\n")
-        `shouldBe` (Right (NoteLeft Note Nothing ["right"]))
+        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["right"]))
       it "note left multi" $ P.parse declNotes "" ("note left \nright\nend note\n")
-        `shouldBe` (Right (NoteLeft Note Nothing ["right"]))
+        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["right"]))
 
 {-
     describe "doubleLabels" $ do
@@ -291,7 +291,7 @@ spec = do
       it "autoactivate Off" $ P.parse declCommand "" "autoactivate off" `shouldBe` (Right (AutoActivate Off))
       it "activate" $ P.parse declCommand "" "activate A" `shouldBe` (Right (Activate (Nq "A") Nothing))
       it "deactivate" $ P.parse declCommand "" "deactivate B" `shouldBe` (Right (Deactivate (Nq "B")))
-      it "activate" $ P.parse declCommand "" "activate A #DarkSalmon" `shouldBe` (Right (Activate (Nq "A") Nothing))
+      it "activate" $ P.parse declCommand "" "activate A #DarkSalmon" `shouldBe` (Right (Activate (Nq "A") (Just (Color DarkSalmon))))
 
       it "title" $ P.parse declCommand "" "title A\n" `shouldBe` (Right (Title " A"))
       it "title" $ P.parse declCommand "" "title A\\a\n" `shouldBe` (Right (Title " A\\a"))

@@ -57,10 +57,10 @@ data NoteShape = Note |RNote | HNote
   deriving (Eq, Show, Enum, Bounded)
 
 data Notes where
-  NoteLeft  :: NoteShape -> Maybe Name -> [T.Text] -> Notes
-  NoteRight :: NoteShape -> Maybe Name -> [T.Text] -> Notes
-  NoteOver  :: NoteShape -> Name -> Maybe Name -> [T.Text] -> Notes
-  RefOver   :: Name -> Maybe Name -> [T.Text] -> Notes  
+  NoteLeft  :: NoteShape ->         Maybe Name -> Maybe Color -> [T.Text] -> Notes
+  NoteRight :: NoteShape ->         Maybe Name -> Maybe Color -> [T.Text] -> Notes
+  NoteOver  :: NoteShape -> Name -> Maybe Name -> Maybe Color -> [T.Text] -> Notes
+  RefOver   :: Name ->              Maybe Name -> Maybe Color -> [T.Text] -> Notes   -- Color is not used
   deriving (Eq, Show)
 
 data Declaration where

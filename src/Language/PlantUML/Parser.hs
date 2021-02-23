@@ -233,12 +233,12 @@ declNotes = go
     go :: MonadParsec Char T.Text m => m Notes
     go = do
       tag <- reserved "note" <|> reserved "rnote" <|> reserved "hnote" <|> reserved "ref"
-      lro <- try (lexeme $ reserved "left") <|> (lexeme $ reserved "right" <|> (lexeme $ reserved "over"))
       let shape = case tag of
             "note"  -> Note
             "rnote" -> RNote
             "hnote" -> HNote
             _       -> Note -- Ref
+      lro <- try (lexeme $ reserved "left") <|> (lexeme $ reserved "right" <|> (lexeme $ reserved "over"))
       case (tag, lro) of
         (_,     "left")  -> sideNote tag (NoteLeft shape)
         (_,     "right") -> sideNote tag (NoteRight shape)
@@ -246,34 +246,38 @@ declNotes = go
         (_,     "over")  -> overNote tag (NoteOver shape)        
         _ -> empty
         
-    sideNote :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> [T.Text] -> Notes) -> m Notes
+    sideNote :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> Maybe Color -> [T.Text] -> Notes) -> m Notes
     sideNote tag dcon = do
-      sm <- lexeme (string ":") <|> lexeme (string "of") <|> restOfLine
-      case sm of
-        ":" -> do -- no name follows
-          note <- oneLine
-          return $ dcon Nothing note
-        "of" -> do -- name follows
-          n <- optional (lexeme name)
-          note <- oneLine
-          return $ dcon n note
-        _ -> do -- multiline
-          note <- linesTill' tag [sm]
-          return $ dcon Nothing note
+      n <- optional name
+      c <- optional color
+      mark <- (string ":") <|> (reserved "of") <|> restOfLine
+      case mark of
+        ":" -> do
+          ns <- oneLine
+          return $ dcon n c ns
+        "of" -> do -- name and color follows 
+          n <- optional name
+          c <- optional color
+          ns <- linesTill' tag []
+          return $ dcon n c ns
+        _ -> do
+          ns <-  linesTill' tag []
+          return $ dcon n c ns
+
           
-    overNote :: MonadParsec Char T.Text m => T.Text -> (Name -> Maybe Name -> [T.Text] -> Notes) -> m Notes
+    overNote :: MonadParsec Char T.Text m => T.Text -> (Name -> Maybe Name -> Maybe Color -> [T.Text] -> Notes) -> m Notes
     overNote tag dcon = do
       first <- lexeme name
       second <- optional (lexeme (char ',') *> lexeme name)
-      mark <- (string ":") <|> (T.pack <$> manyTill printChar endOfLine)
+      c <- optional color
+      mark <- (string ":") <|> restOfLine
       case mark of
         ":" -> do
-          note <- oneLine
-          return $ dcon first second note
+          ns <- oneLine
+          return $ dcon first second Nothing ns
         _ -> do
-          note <- linesTill' tag []
-          return $ dcon first second note
-    
+          ns <- linesTill' tag []
+          return $ dcon first second c ns
         
 -- Group
 -- Grouping things in Declaration allows us nested structure.
