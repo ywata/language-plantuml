@@ -48,12 +48,18 @@ decls = (SubjectDef <$> declSubject)
       <|> (CommandDef <$> declCommand)
         
 
+dividerParser :: MonadParsec Char T.Text m => m Command
+dividerParser = do
+  string "=="
+  r <- doubleCharRight '=' ("", "") []
+  return $ Divider r
+
 stereotype :: MonadParsec Char T.Text m => m Stereotype
 stereotype = do
   string "<<"
-  r <- stereoRight  ("", "") [] 
+  r <- doubleCharRight '>' ("", "") [] 
   return $ Stereotype r
-  
+
 
 stereoRight :: MonadParsec Char T.Text m => (String, T.Text) -> [T.Text] -> m T.Text
 stereoRight (tmp, mark) ts = do
@@ -82,6 +88,35 @@ stereoRight (tmp, mark) ts = do
       string ">>"
       rs <- many (char '>')
       return $ T.append ">>" (T.pack rs)
+
+doubleCharRight :: MonadParsec Char T.Text m => Char -> (String, T.Text) -> [T.Text] -> m T.Text
+doubleCharRight ch (tmp, mark) ts = do
+  rest <- lookAhead restOfLine
+  let len = length ts
+  if T.length rest == 0 then
+    if len > 0 then
+      return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
+    else
+      empty
+
+    else do
+      let peek = P.parse (manyTill printChar rightEnd) "" rest
+      case peek of
+        Right _ -> do
+          r <- manyTill_ printChar rightEnd
+          stereoRight r (mark : T.pack tmp  : ts)
+        Left _ -> if len > 0 then
+                     return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
+                   else
+                     return $ T.append "|" rest
+
+  where
+    rightEnd :: MonadParsec Char T.Text m => m T.Text
+    rightEnd = do
+      let doubleChars = T.pack [ch, ch]
+      string doubleChars
+      rs <- many (char ch)
+      return $ T.append doubleChars (T.pack rs)
 
       
 
@@ -217,15 +252,18 @@ declNotes = go
         
     sideNote :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> [T.Text] -> Notes) -> m Notes
     sideNote tag dcon = do
-      sm <- lexeme (string ":") <|> lexeme (string "of")
+      sm <- lexeme (string ":") <|> lexeme (string "of") <|> restOfLine
       case sm of
-        ":" -> do
+        ":" -> do -- no name follows
           note <- oneLine
           return $ dcon Nothing note
-        "of" -> do
-          name <- optional (lexeme name)
-          note <- linesTill' tag []
-          return $ dcon name note
+        "of" -> do -- name follows
+          n <- optional (lexeme name)
+          note <- oneLine
+          return $ dcon n note
+        _ -> do -- multiline
+          note <- linesTill' tag [sm]
+          return $ dcon Nothing note
           
     overNote :: MonadParsec Char T.Text m => T.Text -> (Name -> Maybe Name -> [T.Text] -> Notes) -> m Notes
     overNote tag dcon = do
@@ -266,7 +304,7 @@ groupingAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFrom
 
 ---- Commands
 declCommand :: MonadParsec Char T.Text m => MonadParsec Char T.Text m => m Command
-declCommand = assocParser commandAssoc <|> delayParser <|> skinParamParser <|> titleParser
+declCommand = assocParser commandAssoc <|> delayParser <|> skinParamParser <|> titleParser <|> dividerParser
 
 hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
 hiddenItemAssoc = mkAssoc

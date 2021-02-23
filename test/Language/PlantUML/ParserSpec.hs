@@ -157,7 +157,7 @@ spec = do
       it "two >>" $ P.parse stereotype "" "<<first> >>> second>>>\n"
         `shouldBe` (Right (Stereotype "first> >>> second>"))
 
-
+      
 
 --    describe "arrow1" $ do
 --      it "arrow" $ parse (choice parrows) "" "->" `shouldBe` (Right "->")
@@ -186,6 +186,9 @@ spec = do
         (Right (Arrow2 (Just (Nq "A"))
                         (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (AliasedName (Q "B") (Nq "b")))
                         (Just " message !")))
+      it "bill -> bob #005500 : hello from thread 2" $ do
+        P.parse declArrow "" "bill -> bob #005500 : hello from thread 2\n"
+        `shouldBe` (Right (Arrow2 (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) Nothing))
 
 
     describe "return only" $ do
@@ -214,7 +217,7 @@ spec = do
 
 
 
-    describe "notes" $ do
+    describe "one line note" $ do
       it "note left oneline" $ P.parse declNotes "" ("note left : right\n")
         `shouldBe` (Right (NoteLeft Note Nothing ["right"]))
       it "note right oneline" $ P.parse declNotes "" ("note right :left\n")
@@ -232,6 +235,11 @@ spec = do
       it "hnote left oneline" $ P.parse declNotes "" ("hnote left : right\n")
         `shouldBe` (Right (NoteLeft HNote Nothing ["right"]))
 
+    describe "multi line note" $ do
+      it "note left multi" $ P.parse declNotes "" ("note left\nright\nend note\n")
+        `shouldBe` (Right (NoteLeft Note Nothing ["right"]))
+      it "note left multi" $ P.parse declNotes "" ("note left \nright\nend note\n")
+        `shouldBe` (Right (NoteLeft Note Nothing ["right"]))
 
 {-
     describe "doubleLabels" $ do
@@ -298,6 +306,10 @@ spec = do
         `shouldBe` (Right (LifeLine Create Nothing (Nq "name")))
       it "create control name" $ P.parse declCommand "" ("create control name\n")
         `shouldBe` (Right (LifeLine Create (Just Control) (Nq "name")))
+      it "divider normal" $ P.parse declCommand "" ("== normal ==\n")
+        `shouldBe` (Right (Divider " normal "))
+      it "divider ==" $ P.parse declCommand "" ("=== === = ===\n")
+        `shouldBe` (Right (Divider " === = ="))
 
     describe "end" $ do
       it "end title" $
@@ -345,10 +357,10 @@ spec = do
                                      ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " aaa"))]))
 
 
-
-
+{-
 rightEnd :: MonadParsec Char T.Text m => m T.Text
 rightEnd = do
       string ">>"
       rs <- many (char '>')
       return $ T.append ">>" (T.pack rs)
+-}
