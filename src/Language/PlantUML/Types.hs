@@ -133,9 +133,9 @@ data Command where
   NewPage :: Maybe T.Text -> Command
   Title :: T.Text -> Command
   Divider :: T.Text -> Command
-  VSpace :: Command
   SkinParameter :: [SkinParam] -> Command
-
+  Space :: Maybe Integer -> Command
+  VSpace :: Command
   deriving (Eq, Show)
 
 

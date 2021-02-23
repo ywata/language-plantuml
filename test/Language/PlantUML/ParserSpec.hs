@@ -310,7 +310,21 @@ spec = do
         `shouldBe` (Right (Divider " normal "))
       it "divider ==" $ P.parse declCommand "" ("=== === = ===\n")
         `shouldBe` (Right (Divider " === = ="))
+        
+      it "space |||" $ P.parse declCommand "" ("|||\n")
+        `shouldBe` (Right (Space Nothing))
+      it "space |||" $ P.parse declCommand "" ("||||\n")
+        `shouldBe` (Right (Space Nothing))
+      it "space |||| " $ P.parse declCommand "" ("|||| \n")
+        `shouldBe` (Right (Space Nothing))
+      it "space ||40|" $ P.parse declCommand "" ("||40|\n")
+        `shouldBe` (Right (Space (Just 40)))
+      it "space ||50||" $ P.parse declCommand "" ("||50||\n")
+        `shouldBe` (Right (Space (Just 50)))
+      it "space |||60| " $ P.parse declCommand "" ("|||60| \n")
+        `shouldBe` (Right (Space (Just 60)))        
 
+        
     describe "end" $ do
       it "end title" $
         P.parse (end "title") "" "end title"

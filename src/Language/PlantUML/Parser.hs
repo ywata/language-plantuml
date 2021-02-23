@@ -117,16 +117,10 @@ doubleCharRight ch (tmp, mark) ts = do
       string doubleChars
       rs <- many (char ch)
       return $ T.append doubleChars (T.pack rs)
-
       
-
-{-
-<<>>
-<<aaaa>>
-<<aaaa> >> >>>
-
-
--}
+spaceParser :: MonadParsec Char T.Text m => m Command
+spaceParser = try (Space <$> (string "|" *> many1 (char '|') *> optional L.decimal <* lexeme (many1 (char '|'))))
+              <|> (Space <$> (string "||" *> lexeme (many1 (char '|')) *> pure Nothing))
   
 
 declSubject :: MonadParsec Char T.Text m => m Subject
@@ -304,7 +298,13 @@ groupingAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFrom
 
 ---- Commands
 declCommand :: MonadParsec Char T.Text m => MonadParsec Char T.Text m => m Command
-declCommand = assocParser commandAssoc <|> delayParser <|> skinParamParser <|> titleParser <|> dividerParser
+declCommand = assocParser commandAssoc
+              <|> delayParser
+              <|> skinParamParser
+              <|> titleParser
+              <|> dividerParser
+              <|> spaceParser
+
 
 hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
 hiddenItemAssoc = mkAssoc
