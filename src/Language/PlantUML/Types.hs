@@ -60,6 +60,7 @@ data Notes where
   NoteLeft  :: NoteShape -> Maybe Name -> [T.Text] -> Notes
   NoteRight :: NoteShape -> Maybe Name -> [T.Text] -> Notes
   NoteOver  :: NoteShape -> Name -> Maybe Name -> [T.Text] -> Notes
+  RefOver   :: Name -> Maybe Name -> [T.Text] -> Notes  
   deriving (Eq, Show)
 
 data Declaration where
@@ -133,7 +134,7 @@ data Command where
   NewPage :: Maybe T.Text -> Command
   Title :: T.Text -> Command
   Divider :: T.Text -> Command
-  SkinParameter :: [SkinParam] -> Command
+  SkinParameters :: [SkinParam] -> Command
   Space :: Maybe Integer -> Command
   VSpace :: Command
   deriving (Eq, Show)

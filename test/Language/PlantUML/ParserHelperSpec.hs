@@ -60,7 +60,9 @@ spec = do
       
     describe "P.pairParser" $ do
       it "OK" $ P.parse (P.pairParser ("true", pure True)) "" "true" `shouldBe` (Right True)
-      it "fail" $ P.parseMaybe (P.pairParser ("true", pure True)) "True" `shouldBe` Nothing
+      -- case insensitive
+      it "OK" $ P.parse (P.pairParser ("true", pure True)) "" "True" `shouldBe` (Right True)
+      it "fail" $ P.parseMaybe (P.pairParser ("true", pure True)) "False" `shouldBe` Nothing
       
     describe "P.assocParser" $ do
       it "1st match" $ P.parse (P.assocParser [("true", pure True), ("True", pure True)]) "" "true" `shouldBe` (Right True)

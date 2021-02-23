@@ -208,7 +208,7 @@ declArrow = try(Return <$> ((reserved "return") *> optional restOfLine)) <|>
 
 
 color ::  MonadParsec Char T.Text m => m Color
-color = try definedColor <|> try hexColor
+color = try definedColor <|> try hexColor 
   where
     hexColor :: MonadParsec Char T.Text m => m Color
     hexColor = HexColor . T.pack <$> (char '#' *> (many1 hexDigitChar))
@@ -231,17 +231,18 @@ declNotes = go
   where
     go :: MonadParsec Char T.Text m => m Notes
     go = do
-      tag <- reserved "note" <|> reserved "rnote" <|> reserved "hnote"
+      tag <- reserved "note" <|> reserved "rnote" <|> reserved "hnote" <|> reserved "ref"
       lro <- try (lexeme $ reserved "left") <|> (lexeme $ reserved "right" <|> (lexeme $ reserved "over"))
       let shape = case tag of
             "note"  -> Note
             "rnote" -> RNote
             "hnote" -> HNote
-            _ -> Note -- This never happen.
-      case lro of
-        "left"  -> sideNote tag (NoteLeft shape)
-        "right" -> sideNote tag (NoteRight shape)
-        "over"  -> overNote tag (NoteOver shape)
+            _       -> Note -- Ref
+      case (tag, lro) of
+        (_,     "left")  -> sideNote tag (NoteLeft shape)
+        (_,     "right") -> sideNote tag (NoteRight shape)
+        ("ref", "over")  -> overNote tag RefOver
+        (_,     "over")  -> overNote tag (NoteOver shape)        
         _ -> empty
         
     sideNote :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> [T.Text] -> Notes) -> m Notes
@@ -300,10 +301,11 @@ groupingAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFrom
 declCommand :: MonadParsec Char T.Text m => MonadParsec Char T.Text m => m Command
 declCommand = assocParser commandAssoc
               <|> delayParser
-              <|> skinParamParser
               <|> titleParser
               <|> dividerParser
               <|> spaceParser
+              <|> try skinParamParser
+              <|> try skinParametersParser
 
 
 hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
@@ -386,7 +388,14 @@ sequenceParticipantTypeAssoc :: MonadParsec Char T.Text m => [(T.Text, m Sequenc
 sequenceParticipantTypeAssoc = mkAssoc
 
 skinParamParser :: MonadParsec Char T.Text m => m Command
-skinParamParser = SkinParameter . (:[]) <$> (lexeme (reserved "skinparam") *> lexeme (assocParser skinParamAssoc))
+skinParamParser = SkinParameters . (:[]) <$> (lexeme (reserved "skinparam") *> lexeme (assocParser skinParamAssoc))
+
+
+skinParametersParser :: MonadParsec Char T.Text m => m Command
+skinParametersParser =
+  SkinParameters <$> (reserved "skinparam" *> reserved "sequence" *> 
+                       between (lexeme' (char '{')) (lexeme' (char '}')) (many (lexeme' (assocParser skinParamAssoc))))
+
 
 skinParamAssoc :: MonadParsec Char T.Text m => [(T.Text, m SkinParam)]
 skinParamAssoc = [

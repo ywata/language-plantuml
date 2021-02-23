@@ -27,12 +27,20 @@ dropContinuationLine = go
 
 spaceConsumer :: MonadParsec Char T.Text m => m ()
 spaceConsumer = L.space space1 (L.skipLineComment "'") (L.skipBlockComment "/'" "'/")
+spaceConsumer' :: MonadParsec Char T.Text m => m ()
+spaceConsumer' = L.space (spaceChar >> pure()) (L.skipLineComment "'") (L.skipBlockComment "/'" "'/")
 
 lexeme :: MonadParsec Char T.Text m => m a -> m a
 lexeme  = L.lexeme spaceConsumer
 
+lexeme':: MonadParsec Char T.Text m => m a -> m a
+lexeme'  = L.lexeme spaceConsumer'
+
+
 symbol :: MonadParsec Char T.Text m => T.Text -> m T.Text
 symbol  = L.symbol spaceConsumer
+symbol' :: MonadParsec Char T.Text m => T.Text -> m T.Text
+symbol'  = L.symbol spaceConsumer'
 
 mkAssoc :: (Show a, Enum a, Bounded a, MonadParsec Char T.Text m) => [(T.Text, m a)]
 mkAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
@@ -67,7 +75,7 @@ quotedName = T.pack <$> lexeme ((char '"' >> manyTill printChar (char '"')))
 reserved' :: MonadParsec Char T.Text m => T.Text -> m T.Text
 reserved' txt = do
   n <- lookAhead ident'
-  if n == txt then ident' else empty
+  if T.toCaseFold n == T.toCaseFold txt then ident' else empty
 reserved :: MonadParsec Char T.Text m => T.Text -> m T.Text
 reserved txt = lexeme (reserved' txt)
 
@@ -77,7 +85,7 @@ reserved txt = lexeme (reserved' txt)
 reservedSymbol :: MonadParsec Char T.Text m => T.Text -> m T.Text
 reservedSymbol txt = do
   n <- lookAhead (string txt <* (choice [space, endOfLine >> pure ()]))
-  if n == txt then (lexeme (string txt)) else empty
+  if T.toCaseFold n == T.toCaseFold txt then (lexeme (string txt)) else empty
   
 
 ----

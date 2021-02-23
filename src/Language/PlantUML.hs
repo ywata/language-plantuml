@@ -22,6 +22,7 @@ module Language.PlantUML
   , Command(..)
   , Shaft(..)
   , SkinParam(..)
+  , SequenceParticipantType(..)  
   , Notes(..)
   )
 where

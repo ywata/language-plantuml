@@ -25,6 +25,7 @@ import Language.PlantUML.Parser
       name, 
       skinParamAssoc,
       skinParamParser,
+      skinParametersParser,
       stereotype,
       arrow,
       linesTill',
@@ -290,6 +291,8 @@ spec = do
       it "autoactivate Off" $ P.parse declCommand "" "autoactivate off" `shouldBe` (Right (AutoActivate Off))
       it "activate" $ P.parse declCommand "" "activate A" `shouldBe` (Right (Activate (Nq "A") Nothing))
       it "deactivate" $ P.parse declCommand "" "deactivate B" `shouldBe` (Right (Deactivate (Nq "B")))
+      it "activate" $ P.parse declCommand "" "activate A #DarkSalmon" `shouldBe` (Right (Activate (Nq "A") Nothing))
+
       it "title" $ P.parse declCommand "" "title A\n" `shouldBe` (Right (Title " A"))
       it "title" $ P.parse declCommand "" "title A\\a\n" `shouldBe` (Right (Title " A\\a"))
       it "title" $ P.parseMaybe declCommand "title A" `shouldBe` Nothing
@@ -343,13 +346,27 @@ spec = do
         
       it "skinparam responseMessageBelowArrow true" $
         P.parse skinParamParser "" "skinparam responseMessageBelowArrow true"
-        `shouldBe` (Right (SkinParameter [ResponseMessageBelowArrow True]))
+        `shouldBe` (Right (SkinParameters [ResponseMessageBelowArrow True]))
       it "skinparam responseMessageBelowArrow false" $
         P.parse skinParamParser "" "skinparam responseMessageBelowArrow false"
-        `shouldBe` (Right (SkinParameter [ResponseMessageBelowArrow False]))
+        `shouldBe` (Right (SkinParameters [ResponseMessageBelowArrow False]))
       it "skinparam maxMessageSize" $
         P.parse skinParamParser "" "skinparam maxMessageSize 10"
-        `shouldBe` (Right (SkinParameter [MaxMessageSize 10]))
+        `shouldBe` (Right (SkinParameters [MaxMessageSize 10]))
+
+    describe "skinparam sequence" $ do
+      it "empty" $
+        P.parse skinParametersParser "" "skinparam sequence {}"
+        `shouldBe` (Right (SkinParameters []))
+      it "one entry" $
+        P.parse skinParametersParser "" "skinparam sequence {maxMessageSize 20}"
+        `shouldBe` (Right (SkinParameters [MaxMessageSize 20]))
+      it "one entry" $
+        P.parse skinParametersParser "" "skinparam sequence\n{\nmaxMessageSize 20\n}"
+        `shouldBe` (Right (SkinParameters [MaxMessageSize 20]))
+      it "two entries" $
+        P.parse skinParametersParser "" "skinparam  sequence \n { \nmaxMessageSize 20 \n maxMessageSize 10\n } \n"
+        `shouldBe` (Right (SkinParameters [MaxMessageSize 20, MaxMessageSize 10]))
 
     describe "asName" $ do
       it "name only" $ P.parse asName "" "name" `shouldBe` (Right (Name1 (Nq "name")))
