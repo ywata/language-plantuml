@@ -225,6 +225,8 @@ subjectTypeAssoc = mkAssoc
 lifeLineOpAssoc :: MonadParsec Char T.Text m => [(T.Text, m LifeLineOp)]
 lifeLineOpAssoc = mkAssoc
 
+noteShapeAssoc' ::  [(T.Text, NoteShape)]
+noteShapeAssoc' = mkAssoc'
 
 ---- Notes
 declNotes ::  MonadParsec Char T.Text m => m Notes
@@ -233,12 +235,9 @@ declNotes = go
     go :: MonadParsec Char T.Text m => m Notes
     go = do
       tag <- reserved "note" <|> reserved "rnote" <|> reserved "hnote" <|> reserved "ref"
-      let shape = case tag of
-            "note"  -> Note
-            "rnote" -> RNote
-            "hnote" -> HNote
-            _       -> Note -- Ref
-      lro <- try (lexeme $ reserved "left") <|> (lexeme $ reserved "right" <|> (lexeme $ reserved "over"))
+      let shape =  maybe Note id  (lookup (T.toLower tag) noteShapeAssoc')
+      -- do not consume spaces here
+      lro <- hlexeme (try (reserved' "left") <|> try (reserved' "right" <|> try (reserved' "over")))
       case (tag, lro) of
         (_,     "left")  -> sideNote tag (NoteLeft shape)
         (_,     "right") -> sideNote tag (NoteRight shape)
@@ -247,30 +246,49 @@ declNotes = go
         _ -> empty
         
     sideNote :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> Maybe Color -> [T.Text] -> Notes) -> m Notes
-    sideNote tag dcon = do
-      n <- optional name
-      c <- optional color
-      mark <- (string ":") <|> (reserved "of") <|> restOfLine
-      case mark of
-        ":" -> do
-          ns <- oneLine
-          return $ dcon n c ns
-        "of" -> do -- name and color follows 
-          n <- optional name
-          c <- optional color
-          ns <- linesTill' tag []
-          return $ dcon n c ns
-        _ -> do
-          ns <-  linesTill' tag []
-          return $ dcon n c ns
+    sideNote tag dcon = lexeme (try (caseOf tag dcon) <|> try (caseColon tag dcon) <|> try (caseRest tag dcon))
 
+
+    -- Right : of, Left otherwise
+
+    nameWithColor :: MonadParsec Char T.Text m => m (Maybe Name, Maybe Color)
+    nameWithColor = do
+      n <- hlexeme name'
+      c <- hlexeme color
+      return (Just n, Just c)
+    nameOnly :: MonadParsec Char T.Text m => m (Maybe Name, Maybe Color)
+    nameOnly = do
+      n <- hlexeme name'
+      return (Just n, Nothing)
+    colorOnly :: MonadParsec Char T.Text m => m (Maybe Name, Maybe Color)
+    colorOnly = do
+      c <- hlexeme color
+      return (Nothing, Just c)
+
+    caseOf :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> Maybe Color -> [T.Text] -> Notes) -> m Notes
+    caseOf tag dcon = do
+      hlexeme (reserved' "of")
+      (n, c) <- lexeme (try nameWithColor <|> try nameOnly <|> try colorOnly <|> pure (Nothing, Nothing))
+      ns <- linesTill' tag []
+      return $ dcon n c ns
+    caseColon :: MonadParsec Char T.Text m => T.Text -> (Maybe Name -> Maybe Color -> [T.Text] -> Notes) -> m Notes
+    caseColon tag dcon = do
+      (n, c) <- hlexeme (try nameWithColor <|> try nameOnly <|> try colorOnly <|> pure (Nothing, Nothing))
+      string ":"
+      ns <- oneLine
+      return $ dcon n c ns
+      
+    caseRest tag dcon = do
+      ns <- linesTill' tag []
+      return $ dcon Nothing Nothing ns
+      
           
     overNote :: MonadParsec Char T.Text m => T.Text -> (Name -> Maybe Name -> Maybe Color -> [T.Text] -> Notes) -> m Notes
     overNote tag dcon = do
       first <- lexeme name
       second <- optional (lexeme (char ',') *> lexeme name)
       c <- optional color
-      mark <- (string ":") <|> restOfLine
+      mark <- (string ":") <|> restOfLine'
       case mark of
         ":" -> do
           ns <- oneLine
@@ -318,8 +336,8 @@ declCommand = assocParser commandAssoc
               <|> titleParser
               <|> dividerParser
               <|> spaceParser
-              <|> try skinParamParser
               <|> try skinParametersParser
+              <|> try skinParamParser
 
 
 hiddenItemAssoc :: MonadParsec Char T.Text m => [(T.Text, m HiddenItem)]
@@ -440,9 +458,10 @@ skinParamAssoc = [
   ]
 
 
-
+name' :: MonadParsec Char T.Text m => m Name
+name' =  (Q <$> quotedName) <|> (Nq <$> nonQuotedName)
 name :: MonadParsec Char T.Text m => m Name
-name = (Q <$> quotedName) <|> (Nq <$> nonQuotedName)
+name = lexeme name'
 
 reservedAs :: MonadParsec Char T.Text m => m Name
 --reservedAs = optional (Nq <$> (lexeme (reserved "as") *> lexeme nonQuotedName))

@@ -30,9 +30,13 @@ spaceConsumer :: MonadParsec Char T.Text m => m ()
 spaceConsumer = L.space space1 (L.skipLineComment "'") (L.skipBlockComment "/'" "'/")
 spaceConsumer' :: MonadParsec Char T.Text m => m ()
 spaceConsumer' = L.space (spaceChar >> pure()) (L.skipLineComment "'") (L.skipBlockComment "/'" "'/")
+hspaceConsumer :: MonadParsec Char T.Text m => m ()
+hspaceConsumer = L.space (hspace1 >> pure()) (L.skipLineComment "'") (L.skipBlockComment "/'" "'/")
 
 lexeme :: MonadParsec Char T.Text m => m a -> m a
 lexeme  = L.lexeme spaceConsumer
+hlexeme :: MonadParsec Char T.Text m => m a -> m a
+hlexeme  = L.lexeme hspaceConsumer
 
 lexeme':: MonadParsec Char T.Text m => m a -> m a
 lexeme'  = L.lexeme spaceConsumer'
@@ -45,6 +49,9 @@ symbol'  = L.symbol spaceConsumer'
 
 mkAssoc :: (Show a, Enum a, Bounded a, MonadParsec Char T.Text m) => [(T.Text, m a)]
 mkAssoc = map (\e -> (T.toLower . T.pack . show $ e, return e)) $ enumFromTo minBound maxBound
+
+mkAssoc' :: (Show a, Enum a, Bounded a) => [(T.Text, a)]
+mkAssoc' = map (\e -> (T.toLower . T.pack . show $ e, e)) $ enumFromTo minBound maxBound
 
 
 ----
@@ -65,10 +72,10 @@ ident = lexeme ident'
 
 
 nonQuotedName :: MonadParsec Char T.Text m => m T.Text
-nonQuotedName = T.pack <$> lexeme (many1 (letterChar <|> digitChar))
+nonQuotedName = T.pack <$> (many1 (letterChar <|> digitChar))
 
 quotedName :: MonadParsec Char T.Text m => m T.Text
-quotedName = T.pack <$> lexeme ((char '"' >> manyTill printChar (char '"')))
+quotedName = T.pack <$>  ((char '"' >> manyTill printChar (char '"')))
 
 
 --- Keyword name of elements of diagram
@@ -94,7 +101,7 @@ assocParser :: (MonadParsec Char T.Text m) => [(T.Text, m a)] -> m a
 assocParser = lexeme . choice . map pairParser
 
 pairParser :: MonadParsec Char T.Text m => (T.Text, m a) -> m a
-pairParser (txt, p) = lexeme (reserved txt) *> p
+pairParser (txt, p) = (reserved txt) *> p
 
 ----
 oneLine :: MonadParsec Char T.Text m => m [T.Text]
@@ -104,6 +111,12 @@ oneLine = (:[]) <$> restOfLine
 
 restOfLine :: MonadParsec Char T.Text m => m T.Text
 restOfLine = T.pack <$> manyTill printChar endOfLine
+
+restOfLine' :: MonadParsec Char T.Text m => m T.Text
+restOfLine' = do
+  (ss, r) <-  manyTill_ printChar endOfLine
+  return $ T.append (T.pack ss) r
+
 
 
 {- where
@@ -145,6 +158,6 @@ isEndWith endKey str = case res of
 endMarker :: T.Text -> T.Text
 endMarker endKey = T.append  "end " endKey
 
-endOfLine :: MonadParsec Char T.Text m => m ()
-endOfLine = (crlf >> pure ()) <|> (newline >> pure())
+endOfLine :: MonadParsec Char T.Text m => m T.Text
+endOfLine = crlf  <|> (T.pack . (:[]) <$> newline)
 

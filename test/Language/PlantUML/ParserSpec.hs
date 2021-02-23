@@ -217,30 +217,31 @@ spec = do
 
 
 
-
-    describe "one line note" $ do
-      it "note left oneline" $ P.parse declNotes "" ("note left : right\n")
-        `shouldBe` (Right (NoteLeft Note Nothing Nothing [" right"]))
-      it "note right oneline" $ P.parse declNotes "" ("note right :left\n")
-        `shouldBe` (Right (NoteRight Note Nothing Nothing ["left"]))
-      it "note over oneline 1" $ P.parse declNotes "" ("note over A : A\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing Nothing [" A"]))      
-      it "note over oneline 2" $ P.parse declNotes "" ("note over A, B :A B\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) Nothing ["A B"]))
-      it "note over twolines 1" $ P.parse declNotes "" ("note over A of\nA B\nend note\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") Nothing Nothing ["A B"]))
-      it "note over twolines 2" $ P.parse declNotes "" ("note over A, B of\nA B\nend note\n")
-        `shouldBe` (Right (NoteOver Note (Nq "A") (Just (Nq "B")) Nothing ["A B"]))
-      it "rnote left oneline" $ P.parse declNotes "" ("rnote left : right\n")
-        `shouldBe` (Right (NoteLeft RNote Nothing Nothing [" right"]))
-      it "hnote left oneline" $ P.parse declNotes "" ("hnote left : right\n")
-        `shouldBe` (Right (NoteLeft HNote Nothing Nothing [" right"]))
+    describe "note left of" $ do
+      it "note left of A" $ P.parse declNotes "" ("note left of A\nthis\nend note\n")
+        `shouldBe` (Right (NoteLeft Note (Just (Nq "A"))  Nothing ["this"]))
+      it "note left of #red" $ P.parse declNotes "" ("note left of #red\nthis\nend note\n")
+        `shouldBe` (Right (NoteLeft Note Nothing (Just (Color Red)) ["this"]))
+      it "note left of A #red" $ P.parse declNotes "" ("note left of A #red\nthis\nend note\n")
+        `shouldBe` (Right (NoteLeft Note (Just (Nq "A")) (Just (Color Red)) ["this"]))
+      it "note left of" $ P.parse declNotes "" ("note left of \nthis\nend note\n")
+        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["this"]))
+    describe "note left :" $ do
+      it "note left A :" $ P.parse declNotes "" ("note left A : this\n")
+        `shouldBe` (Right (NoteLeft Note (Just (Nq "A")) Nothing [" this"]))
+      it "note left #red :" $ P.parse declNotes "" ("note left #red : this\n")
+        `shouldBe` (Right (NoteLeft Note Nothing (Just (Color Red)) [" this"]))
+      it "note left A #red :" $ P.parse declNotes "" ("note left A #red: this\n")
+        `shouldBe` (Right (NoteLeft Note (Just (Nq "A")) (Just (Color Red)) [" this"]))
+      it "note left" $ P.parse declNotes "" ("note left \nthis\nend note\n")
+        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["", "this"]))
 
     describe "multi line note" $ do
-      it "note left multi" $ P.parse declNotes "" ("note left\nright\nend note\n")
-        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["right"]))
-      it "note left multi" $ P.parse declNotes "" ("note left \nright\nend note\n")
-        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["right"]))
+      it "note left multi" $ P.parse declNotes "" ("note left\nright1\nright2\nend note\n")
+        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["", "right1", "right2"]))
+
+      it "note left multi" $ P.parse declNotes "" ("note left \nright1\nend note\n")
+        `shouldBe` (Right (NoteLeft Note Nothing Nothing ["", "right1"]))
 
 {-
     describe "doubleLabels" $ do
@@ -395,3 +396,5 @@ rightEnd = do
       rs <- many (char '>')
       return $ T.append ">>" (T.pack rs)
 -}
+
+
