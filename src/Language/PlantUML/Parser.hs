@@ -40,12 +40,12 @@ plantUML = decls
 declaration :: MonadParsec Char T.Text m => m Declaration
 declaration = lexeme' decls
 decls :: MonadParsec Char T.Text m => m Declaration
-decls = (SubjectDef <$> declSubject)
-      <|> (ArrowDef <$> declArrow)
-      <|> (NotesDef <$> declNotes)
+decls = (SubjectDef    <$> declSubject)
+      <|> (ArrowDef    <$> declArrow)
+      <|> (NotesDef    <$> declNotes)
       <|> (GroupingDef <$> declGrouping)
-      <|> (CommandDef <$> declCommand)
-      <|> (BoxDef <$> declBox)
+      <|> (CommandDef  <$> declCommand)
+      <|> (BoxDef      <$> declBox)
         
 
 dividerParser :: MonadParsec Char T.Text m => m Command

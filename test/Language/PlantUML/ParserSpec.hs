@@ -304,7 +304,7 @@ spec = do
       it "newpage" $ P.parse declCommand "" "newpage this is new\n" `shouldBe` (Right (NewPage (Just "this is new")))
       it "header" $ P.parse declCommand "" "header\n" `shouldBe` (Right (Header Nothing))
       it "header" $ P.parse declCommand "" "header newpage this is new\n" `shouldBe` (Right (Header (Just "newpage this is new")))
-      it "  header" $ P.parse declCommand "" "  header newpage this is new\n" `shouldBe` (Right (Header (Just "newpage this is new")))      
+      it "header page1     header page2" $ P.parse (many declCommand) "" "header page1\n    header page2\n" `shouldBe` (Right [Header (Just "page1"),Header (Just "page2")])
 
       it "create name" $ P.parse declCommand "" ("create name\n")
         `shouldBe` (Right (LifeLine Create Nothing (Nq "name")))
