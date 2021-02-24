@@ -14,7 +14,6 @@ data Name = Q T.Text | Nq T.Text
 data AliasedName = Name1 Name
                  | AliasedName Name Name
                  | NameColor Name Color
---                 | NoName
   deriving (Eq, Show)
 type Order = Integer
 
@@ -23,15 +22,6 @@ data SubjectType = Participant | Actor | Boundary | Control | Entity | Database 
 
 data Subject where
   Subject     :: SubjectType -> AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-{-  Participant :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-  Actor       :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-  Boundary    :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-  Control     :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-  Entity      :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-  Database    :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-  Collections :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
-  Queue       :: AliasedName -> Maybe Stereotype -> Maybe Order -> Maybe Color -> Subject
--}
   deriving (Eq, Show)
 
 data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
@@ -92,11 +82,6 @@ data Stereotype where
 -- opt
 -- par
 
--- box
--- box is a special key word in the following sense:
--- box does not accepts else element but all other constructions accepts "else".
--- box draws vertical box and all other constructions are drawn horizontally.
--- As a result Box is defined specifically
 data GroupKind = Alt | Opt | Loop | Par | Break | Critical | Group
   deriving(Eq, Show, Enum, Bounded)
 
@@ -128,10 +113,8 @@ data Command where
   Activate :: Name -> Maybe Color -> Command  -- implemented
   AutoActivate :: OnOff -> Command
   Autonumber :: AutonumberType -> Command -- implemented
---  Create :: Name -> Command
   Deactivate :: Name -> Command
   Delay :: Maybe T.Text -> Command
---  Destroy :: Name -> Command
   Header :: Maybe T.Text -> Command
   Footer :: Maybe T.Text -> Command
   Hide :: HiddenItem -> Command
