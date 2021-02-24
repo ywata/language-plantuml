@@ -38,7 +38,7 @@ plantUML = decls
     decls = PlantUML <$> between (reserved "@startuml") (reserved "@enduml") (many declaration)
 
 declaration :: MonadParsec Char T.Text m => m Declaration
-declaration = lexeme decls
+declaration = lexeme' decls
 decls :: MonadParsec Char T.Text m => m Declaration
 decls = (SubjectDef <$> declSubject)
       <|> (ArrowDef <$> declArrow)
@@ -155,10 +155,15 @@ options = ["", "x", "o"]
 dashes = ["-", "--"]
 -}
 right', left', options', dash' :: [T.Text]
+leftOption' = ["?", "["]
+options' = ["x", "o"]
 left'  = map T.pack $ sortBy order $  ["<", "<<", "\\", "\\\\", "/", "//"]
-right' = map T.pack $ sortBy order $  [">", ">>", "\\", "\\\\", "/", "//"]
-options' = map T.pack $ ["x", "o"]
 dash' = ["-"]
+right' = map T.pack $ sortBy order $  [">", ">>", "\\", "\\\\", "/", "//"]
+--options'
+rightOption' = ["?", "]"]
+
+
 
 order :: [a] -> [a] -> Ordering
 order a b | length a == length b = EQ
@@ -168,12 +173,15 @@ order a b | length a > length b = LT
 
 arrow :: MonadParsec Char T.Text m => m Arr
 arrow = do
+  lo' <- optional (choice $ map string leftOption')
   lo <- optional (choice $ map string options')
   l <- optional (choice $ map string left')
   m <- shaft
   r <- optional (choice $ map string right')
   ro <- optional (lexeme . choice $ map string options')
-  return $ Arr (lo <++> l) m (r <++> ro)
+  ro' <- optional (choice $ map string rightOption')
+  
+  return $ PreArr lo' (lo <++> l) m (r <++> ro) ro'
   where
     dashes, dashes1 :: MonadParsec Char T.Text m => m T.Text    
     dashes = do
@@ -193,19 +201,30 @@ arrow = do
     norm' (Just "") = Nothing
     norm' a = a
 
-    (<++>) (Just l) (Just r) = Just (T.append l  r)
-    (<++>) (Just l) Nothing = Just l
-    (<++>) Nothing (Just r) = Just r
-    (<++>) _ _ = Nothing
+(<++>) (Just l) (Just r) = Just (T.append l  r)
+(<++>) (Just l) Nothing = Just l
+(<++>) Nothing (Just r) = Just r
+(<++>) _ _ = Nothing
 
 
 declArrow :: MonadParsec Char T.Text m => m Arrow
 declArrow = try(Return <$> ((reserved "return") *> optional restOfLine)) <|>
-            try (Arrow2 <$> optional (lexeme name)
-                 <*> lexeme arrow
-                 <*> optional asName
-                 <*> optional ((char ':') *> restOfLine))
+            try (arrowParser >>= checkArrow)
+  where
+    arrowParser
+      =  Arrow2 <$> optional (lexeme name)<*> (conv <$> lexeme arrow) <*> optional asName <*> optional ((char ':') *> restOfLine)                         
+      
+--conv :: A -> m Shaft
+conv (PreArr lo' lo s ro ro') = Arr (lo'<++>lo) s (ro <++> ro')
 
+checkArrow ::MonadParsec Char T.Text m =>  Arrow -> m Arrow
+checkArrow (Arrow2 (Just _) (PreArr (Just _) lo s ro ro')      n2       txt) = empty
+checkArrow (Arrow2 n1       (PreArr lo'      lo s ro (Just _)) (Just _) txt) = empty
+checkArrow a@(Arrow2 n1 pa@(PreArr lo' lo s ro ro') n2 txt) =
+  return $ Arrow2 n1 (Arr (lo' <++> lo) s (ro <++> ro')) n2 txt
+checkArrow a = return a
+
+                                    
 
 color ::  MonadParsec Char T.Text m => m Color
 color = try definedColor <|> try hexColor 

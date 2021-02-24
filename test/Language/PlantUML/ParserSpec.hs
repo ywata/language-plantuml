@@ -200,20 +200,20 @@ spec = do
       it "return" $ P.parse declArrow "" "return   statement\n" `shouldBe` (Right (Return (Just "statement")))
 
     describe "arrow color" $ do
-      it "->" $ P.parse arrow "" "->" `shouldBe` (Right (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")))
-      it "<-" $ P.parse arrow "" "<-" `shouldBe` (Right (Arr (Just "<") (Shaft (Just "-") Nothing Nothing) Nothing))
-      it "->" $ P.parse arrow "" "<->" `shouldBe` (Right (Arr (Just "<") (Shaft (Just "-") Nothing Nothing) (Just ">")))
-      it "-->" $ P.parse arrow "" "-->" `shouldBe` (Right (Arr Nothing (Shaft (Just "--") Nothing Nothing) (Just ">")))
-      it "[#red]-->" $ P.parse arrow "" "[#red]-->"
-        `shouldBe` (Right (Arr Nothing (Shaft Nothing (Just (Color Red)) (Just "--")) (Just ">")))
+      it "->" $ P.parse arrow "" "->" `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")Nothing ))
+      it "<-" $ P.parse arrow "" "<-" `shouldBe` (Right (PreArr Nothing (Just "<") (Shaft (Just "-") Nothing Nothing) Nothing Nothing))
+      it "->" $ P.parse arrow "" "<->" `shouldBe` (Right (PreArr Nothing (Just "<") (Shaft (Just "-") Nothing Nothing) (Just ">") Nothing))
+      it "-->" $ P.parse arrow "" "-->" `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "--") Nothing Nothing) (Just ">") Nothing))
+      it "[#red]-->" $ P.parseMaybe arrow "[#red]-->"
+        `shouldBe` Nothing
       it "-[#red]->" $ P.parse arrow "" "-[#red]->"
-        `shouldBe` (Right (Arr Nothing (Shaft (Just "-") (Just (Color Red)) (Just "-")) (Just ">")))
+        `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "-") (Just (Color Red)) (Just "-")) (Just ">") Nothing))
       it "--[#red]>" $ P.parse arrow "" "--[#red]>"
-        `shouldBe` (Right (Arr Nothing (Shaft (Just "--") (Just (Color Red)) Nothing) (Just ">")))
+        `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "--") (Just (Color Red)) Nothing) (Just ">") Nothing))
       it "o--[#red]>" $ P.parse arrow "" "o--[#red]>x"
-        `shouldBe` (Right (Arr (Just "o") (Shaft (Just "--") (Just (Color Red)) Nothing) (Just ">x")))
-      it "--->" $ P.parse arrow "" "--->" `shouldBe` (Right (Arr Nothing (Shaft (Just "---") Nothing Nothing) (Just ">")))
-      it "<--->" $ P.parse arrow "" "<--->" `shouldBe` (Right (Arr (Just "<") (Shaft (Just "---") Nothing Nothing) (Just ">")))      
+        `shouldBe` (Right (PreArr Nothing (Just "o") (Shaft (Just "--") (Just (Color Red)) Nothing) (Just ">x") Nothing))
+      it "--->" $ P.parse arrow "" "--->" `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "---") Nothing Nothing) (Just ">")Nothing))
+      it "<--->" $ P.parse arrow "" "<--->" `shouldBe` (Right (PreArr Nothing (Just "<") (Shaft (Just "---") Nothing Nothing) (Just ">") Nothing))      
 
 
 
@@ -368,9 +368,9 @@ spec = do
       it "two entries" $
         P.parse skinParametersParser "" "skinparam  sequence \n { \nmaxMessageSize 20 \n maxMessageSize 10\n } \n"
         `shouldBe` (Right (SkinParameters [MaxMessageSize 20, MaxMessageSize 10]))
-      it "ParticipantBorderColor DeepSkyBlue" $
-        P.parse skinParametersParser "" "skinparam  sequence \n { \nParticipantBorderColor DeepSkyBlue\n } \n"
-        `shouldBe` (Right (SkinParameters [MaxMessageSize 20, MaxMessageSize 10]))
+      it "ParticipantBorderColor DeepSkyBlue, MaxMessageSize 10" $
+        P.parse skinParametersParser "" "skinparam  sequence \n { \nParticipantBorderColor DeepSkyBlue\n MaxMessageSize 10\n} \n"
+        `shouldBe` (Right (SkinParameters [ParticipantBorderColor (Color DeepSkyBlue), MaxMessageSize 10]))
 
 
     describe "asName" $ do

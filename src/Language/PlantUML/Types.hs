@@ -37,6 +37,7 @@ data Shaft = Shaft (Maybe T.Text) (Maybe Color) (Maybe T.Text)
   deriving(Show, Eq)
 
 data Arr = Arr (Maybe T.Text) Shaft (Maybe T.Text)
+           | PreArr (Maybe T.Text) (Maybe T.Text) Shaft (Maybe T.Text) (Maybe T.Text)
   deriving(Show, Eq)
 
 data DefinedColor = Aqua | Black | Blue | DarkSalmon | DeepSkyBlue | DodgerBlue | LightBlue | Red  | Yellow |White
