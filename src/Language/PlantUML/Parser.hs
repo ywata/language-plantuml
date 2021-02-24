@@ -212,16 +212,16 @@ declArrow = try(Return <$> ((reserved "return") *> optional restOfLine)) <|>
             try (arrowParser >>= checkArrow)
   where
     arrowParser
-      =  Arrow2 <$> optional (lexeme name)<*> (conv <$> lexeme arrow) <*> optional asName <*> optional ((char ':') *> restOfLine)                         
+      =  Arrow <$> optional (lexeme name)<*> (conv <$> lexeme arrow) <*> optional asName <*> optional ((char ':') *> restOfLine)                         
       
 --conv :: A -> m Shaft
 conv (PreArr lo' lo s ro ro') = Arr (lo'<++>lo) s (ro <++> ro')
 
 checkArrow ::MonadParsec Char T.Text m =>  Arrow -> m Arrow
-checkArrow (Arrow2 (Just _) (PreArr (Just _) lo s ro ro')      n2       txt) = empty
-checkArrow (Arrow2 n1       (PreArr lo'      lo s ro (Just _)) (Just _) txt) = empty
-checkArrow a@(Arrow2 n1 pa@(PreArr lo' lo s ro ro') n2 txt) =
-  return $ Arrow2 n1 (Arr (lo' <++> lo) s (ro <++> ro')) n2 txt
+checkArrow (Arrow (Just _) (PreArr (Just _) lo s ro ro')      n2       txt) = empty
+checkArrow (Arrow n1       (PreArr lo'      lo s ro (Just _)) (Just _) txt) = empty
+checkArrow a@(Arrow n1 pa@(PreArr lo' lo s ro ro') n2 txt) =
+  return $ Arrow n1 (Arr (lo' <++> lo) s (ro <++> ro')) n2 txt
 checkArrow a = return a
 
                                     
@@ -335,8 +335,7 @@ declGrouping = do
     go :: MonadParsec Char T.Text m => GroupKind -> T.Text ->  [[Declaration]] -> m Grouping
     go k l xs = do
       let  gk = T.toLower . T.pack . show $ k
-      (decls, e) <- manyTill_ declaration
-        (spaceConsumer *> (string(endMarker gk) <|> string "else") <* spaceConsumer)
+      (decls, e) <- manyTill_ declaration (lexeme (string(endMarker gk) <|> string "else"))
       case e of
         "else" -> go k l (decls: xs)
         _ -> return $ Grouping k l (reverse (decls : xs))

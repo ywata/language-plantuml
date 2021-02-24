@@ -165,31 +165,31 @@ spec = do
 
     describe "arrow" $ do
       it "A -> B : a b c" $ P.parse declArrow "" "A -> B :a b c\n "
-        `shouldBe` (Right (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">"))
+        `shouldBe` (Right (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">"))
                            (Just (Name1 (Nq "B"))) (Just "a b c")))
       it "A->B" $ P.parse declArrow "" "A->B "
-        `shouldBe` (Right (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
+        `shouldBe` (Right (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
       it "-> B" $ P.parse declArrow "" "-> B "
-        `shouldBe` (Right (Arrow2 Nothing (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
+        `shouldBe` (Right (Arrow Nothing (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
       it "-> B" $ P.parse declArrow "" "-> B : a b c\n"
-        `shouldBe` (Right (Arrow2 Nothing (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " a b c")))
+        `shouldBe` (Right (Arrow Nothing (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " a b c")))
       it "A->" $ P.parse declArrow "" "A -> : a b c\n"
-        `shouldBe` (Right (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) Nothing (Just " a b c")))
+        `shouldBe` (Right (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) Nothing (Just " a b c")))
       it "Bob()" $ P.parse declArrow "" "Alice -> \"Bob()\" : Hello\n"
-        `shouldBe` (Right (Arrow2 (Just (Nq "Alice")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">"))
+        `shouldBe` (Right (Arrow (Just (Nq "Alice")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">"))
                             (Just (Name1 (Q "Bob()"))) (Just " Hello")))
       it "Long" $ P.parse declArrow "" "\"Bob()\" -> Long as \"This is very\\\nlong\"\n"
-        `shouldBe` (Right (Arrow2 (Just (Q "Bob()")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (AliasedName (Nq "Long") (Q "This is verylong"))) Nothing))
+        `shouldBe` (Right (Arrow (Just (Q "Bob()")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (AliasedName (Nq "Long") (Q "This is verylong"))) Nothing))
       it "Bob()2" $ P.parse declArrow "" "Long --> \"Bob()\" : ok\n"
-        `shouldBe` (Right (Arrow2 (Just (Nq "Long")) (Arr Nothing (Shaft (Just "--") Nothing Nothing) (Just ">")) (Just (Name1 (Q "Bob()"))) (Just " ok")))
+        `shouldBe` (Right (Arrow (Just (Nq "Long")) (Arr Nothing (Shaft (Just "--") Nothing Nothing) (Just ">")) (Just (Name1 (Q "Bob()"))) (Just " ok")))
       it "A -> \"B\" as b" $ P.parse declArrow "" "A -> \"B\" as b : message !\n"
         `shouldBe`
-        (Right (Arrow2 (Just (Nq "A"))
+        (Right (Arrow (Just (Nq "A"))
                         (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (AliasedName (Q "B") (Nq "b")))
                         (Just " message !")))
       it "bill -> bob #005500 : hello from thread 2" $ do
         P.parse declArrow "" "bill -> bob #005500 : hello from thread 2\n"
-        `shouldBe` (Right (Arrow2 (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) Nothing))
+        `shouldBe` (Right (Arrow (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) Nothing))
 
 
     describe "return only" $ do
@@ -264,11 +264,11 @@ spec = do
         `shouldBe` (Right (Grouping Group "a\\b\\c" [[]]))
 
       it "just group" $ P.parse declGrouping "" "group A\nA->B\nend group\n"
-        `shouldBe`  (Right (Grouping Group "A" [[ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing)]]))
+        `shouldBe`  (Right (Grouping Group "A" [[ArrowDef (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing)]]))
       it "alt else" $ P.parse declGrouping "" "alt a\nA->B: A -> B\nelse\nB->C: B-> C\nend alt\n"
-        `shouldBe` ( Right (Grouping Alt "a" [[ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " A -> B"))],[ArrowDef (Arrow2 (Just (Nq "B")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "C"))) (Just " B-> C"))]]))
+        `shouldBe` ( Right (Grouping Alt "a" [[ArrowDef (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " A -> B"))],[ArrowDef (Arrow (Just (Nq "B")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "C"))) (Just " B-> C"))]]))
       it "opt else else" $ P.parse declGrouping "" "opt a\nA->B: A -> B\nelse\nB->C: B-> C\nelse C->D: C -> D\nend opt\n"
-        `shouldBe` (Right (Grouping Opt "a" [[ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " A -> B"))],[ArrowDef (Arrow2 (Just (Nq "B")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "C"))) (Just " B-> C"))],[ArrowDef (Arrow2 (Just (Nq "C")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "D"))) (Just " C -> D"))]]))
+        `shouldBe` (Right (Grouping Opt "a" [[ArrowDef (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " A -> B"))],[ArrowDef (Arrow (Just (Nq "B")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "C"))) (Just " B-> C"))],[ArrowDef (Arrow (Just (Nq "C")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "D"))) (Just " C -> D"))]]))
 
     describe "command" $ do
       it "autonumber" $ P.parse declCommand "" "autonumber\n" `shouldBe` (Right (Autonumber (Start Nothing Nothing Nothing)))
@@ -390,7 +390,7 @@ spec = do
         `shouldBe` (Right (PlantUML [SubjectDef (Subject Actor (Name1 (Nq "A")) Nothing Nothing Nothing)]))
       it "@startuml and @enduml" $ P.parse plantUML "" "@startuml actor A as a A -> B : aaa\n@enduml"
         `shouldBe` (Right (PlantUML [SubjectDef (Subject Actor (AliasedName (Nq "A") (Nq "a")) Nothing Nothing Nothing),
-                                     ArrowDef (Arrow2 (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " aaa"))]))
+                                     ArrowDef (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " aaa"))]))
 
 
 {-

@@ -13,6 +13,7 @@ data Name = Q T.Text | Nq T.Text
 
 data AliasedName = Name1 Name
                  | AliasedName Name Name
+                 | NameColor Name Color
 --                 | NoName
   deriving (Eq, Show)
 type Order = Integer
@@ -49,8 +50,7 @@ data Color where
   deriving (Eq, Show)
 
 data Arrow where
-  Arrow ::  Maybe T.Text -> T.Text -> Maybe T.Text -> Maybe T.Text -> Arrow
-  Arrow2 ::  Maybe Name -> Arr  -> Maybe AliasedName -> Maybe T.Text -> Arrow  
+  Arrow ::  Maybe Name -> Arr  -> Maybe AliasedName -> Maybe T.Text -> Arrow  
   Return :: Maybe T.Text -> Arrow
   deriving (Eq, Show)
 
