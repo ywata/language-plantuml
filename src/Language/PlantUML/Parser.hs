@@ -142,7 +142,7 @@ declSubject = choice $ map pa [("participant", Subject Participant),
       a <- asName
       s <- optional (lexeme stereotype)      
       o <- optional ((reserved "order") >> lexeme L.decimal)
-      c <- optional (lexeme color)
+      c <- optional color
       return (f a s o c)
 
 
@@ -374,7 +374,7 @@ onOffAssoc = mkAssoc
 
 commandAssoc :: MonadParsec Char T.Text m => [(T.Text, m Command)]
 commandAssoc = [
-  ("activate", Activate <$>  name <*> optional (lexeme color)),
+  ("activate", Activate <$>  name <*> optional color),
   ("autoactivate", AutoActivate <$> assocParser onOffAssoc),
   ("autonumber", 
     Autonumber <$> autonumberTypeParser ),
