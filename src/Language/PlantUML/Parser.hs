@@ -212,7 +212,7 @@ declArrow = try(Return <$> ((reserved "return") *> optional restOfLine)) <|>
             try (arrowParser >>= checkArrow)
   where
     arrowParser
-      =  Arrow <$> optional (lexeme name)<*> (conv <$> lexeme arrow) <*> optional asName <*> optional ((char ':') *> restOfLine)                         
+      =  Arrow <$> optional name<*> (conv <$> lexeme arrow) <*> optional asName <*> optional ((char ':') *> restOfLine)                         
       
 --conv :: A -> m Shaft
 conv (PreArr lo' lo s ro ro') = Arr (lo'<++>lo) s (ro <++> ro')
@@ -312,8 +312,8 @@ declNotes = go
           
     overNote :: MonadParsec Char T.Text m => T.Text -> (Name -> Maybe Name -> Maybe Color -> [T.Text] -> Notes) -> m Notes
     overNote tag dcon = do
-      first <- lexeme name
-      second <- optional (lexeme (char ',') *> lexeme name)
+      first <- name
+      second <- optional (lexeme (char ',') *> name)
       c <- optional color
       mark <- (string ":") <|> restOfLine'
       case mark of
