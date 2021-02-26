@@ -178,8 +178,8 @@ arrow = do
   l <- optional (choice $ map string left')
   m <- shaft
   r <- optional (choice $ map string right')
-  ro <- optional (lexeme . choice $ map string options')
-  ro' <- optional (choice $ map string rightOption')
+  ro <- optional (choice $ map string options')
+  ro' <- optional (lexeme . choice $ map string rightOption')
   
   return $ PreArr lo' (lo <++> l) m (r <++> ro) ro'
   where
