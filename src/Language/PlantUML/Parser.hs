@@ -208,22 +208,55 @@ arrow = do
 
 
 declArrow :: MonadParsec Char T.Text m => m Arrow
-declArrow = try(Return <$> ((reserved "return") *> optional restOfLine)) <|>
-            try (arrowParser >>= checkArrow)
+declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
+            <|> try (do
+                    res <- arrowHead
+                    try (arrowParser res) <|> try (arrowParser2 res) <|> try (activationArrowParser res)
+                )
   where
-    arrowParser
-      =  Arrow <$> optional name<*> (conv <$> lexeme arrow) <*> optional asName <*> optional ((char ':') *> restOfLine)                         
+    arrowHead :: MonadParsec Char T.Text m => m (Maybe Name, Arr)
+    arrowHead = (,) <$> optional name <*> (conv <$> lexeme arrow)
+    
+    arrowParser :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow      
+    arrowParser (n, ar)
+      =  Arrow <$> pure n <*> pure ar <*> optional asName <*> optional ((char ':') *> restOfLine)
+      
+    arrowParser2 :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow
+    arrowParser2 (n, ar)
+      =  Arrow <$> pure n <*> pure ar <*> ((Just . Name1 <$> name) <* color)
+         <*> optional ((char ':') *> restOfLine)
+    activationArrowParser :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow
+    activationArrowParser (n, ar) =
+      ActivationArrow <$> pure n <*> pure ar <*> name <*> activityParser <*> (optional ((char ':') *> restOfLine))
+
+activityParser :: MonadParsec Char T.Text m => m Activity
+activityParser = choice $ map (mkp pairs) pairs
+  where
+    pairs :: MonadParsec Char T.Text m => [(Char, m Activity)]
+    pairs = [('+', Activation <$> optional color),
+             ('-', pure Deactivation),
+             ('*', pure Creation),
+             ('!', pure Destruction)]
+    mkp :: MonadParsec Char T.Text m => [(Char, m Activity)] -> (Char, m Activity) -> m Activity
+    mkp ps (c, m) = char  c >> many (choice . map (char . fst) $ ps) >> m
+
+
+      
       
 --conv :: A -> m Shaft
 conv (PreArr lo' lo s ro ro') = Arr (lo'<++>lo) s (ro <++> ro')
+conv a = a
 
-checkArrow ::MonadParsec Char T.Text m =>  Arrow -> m Arrow
-checkArrow (Arrow (Just _) (PreArr (Just _) lo s ro ro')      n2       txt) = empty
-checkArrow (Arrow n1       (PreArr lo'      lo s ro (Just _)) (Just _) txt) = empty
-checkArrow a@(Arrow n1 pa@(PreArr lo' lo s ro ro') n2 txt) =
-  return $ Arrow n1 (Arr (lo' <++> lo) s (ro <++> ro')) n2 txt
+checkArrow   (Arrow (Just _)  (PreArr (Just _) lo s ro ro')      n2       txt) = empty
+checkArrow   (Arrow n1        (PreArr lo'      lo s ro (Just _)) (Just _) txt) = empty
+checkArrow a@(Arrow n1     pa@(PreArr lo'      lo s ro ro')      n2       txt) =
+  return $  Arrow n1          pa                                 n2       txt
+
+checkArrow   (ActivationArrow (Just _) (PreArr (Just _) lo s ro ro')      n2       co txt) = empty
+checkArrow   (ActivationArrow n1       (PreArr lo'      lo s ro (Just _)) n2 co txt) = empty
+checkArrow a@(ActivationArrow n1     pa@(PreArr lo' lo s ro ro') n2 co txt) =
+  return $ ActivationArrow    n1       pa                                 n2       co  txt
 checkArrow a = return a
-
                                     
 
 color ::  MonadParsec Char T.Text m => m Color
@@ -241,7 +274,6 @@ color' = try definedColor <|> try hexColor
     hexColor = HexColor . T.pack <$> (char '#' *> (many1 hexDigitChar))
     definedColor :: MonadParsec Char T.Text m => m Color    
     definedColor = Color <$> (assocParser colorAssoc)
-
 
 colorAssoc :: MonadParsec Char T.Text m => [(T.Text, m DefinedColor)]
 colorAssoc = mkAssoc
@@ -335,9 +367,11 @@ declGrouping = do
     go :: MonadParsec Char T.Text m => GroupKind -> T.Text ->  [[Declaration]] -> m Grouping
     go k l xs = do
       let  gk = T.toLower . T.pack . show $ k
-      (decls, e) <- manyTill_ declaration (lexeme (string(endMarker gk) <|> string "else"))
+      (decls, e) <- manyTill_ declaration
+        (lexeme ((try (string(endMarker gk)) <|> try (string "end") <|> try (string "else") <* restOfLine))) -- TODO
       case e of
-        "else" -> go k l (decls: xs)
+        "else" -> do
+          go k l (decls: xs)
         _ -> return $ Grouping k l (reverse (decls : xs))
 
 declBox :: MonadParsec Char T.Text m => m Box

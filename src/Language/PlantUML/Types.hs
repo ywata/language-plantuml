@@ -39,8 +39,13 @@ data Color where
   HexColor :: T.Text -> Color  
   deriving (Eq, Show)
 
+data Activity = Creation |Destruction | Activation (Maybe Color) | Deactivation
+  deriving (Eq, Show)
+
+
 data Arrow where
-  Arrow ::  Maybe Name -> Arr  -> Maybe AliasedName -> Maybe T.Text -> Arrow  
+  Arrow  ::  Maybe Name -> Arr  -> Maybe AliasedName -> {- Color -> -} Maybe T.Text -> Arrow
+  ActivationArrow :: Maybe Name -> Arr -> Name -> Activity -> Maybe T.Text -> Arrow    
   Return :: Maybe T.Text -> Arrow
   deriving (Eq, Show)
 

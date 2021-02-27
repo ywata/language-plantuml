@@ -110,11 +110,11 @@ oneLine = (:[]) <$> restOfLine
 ---- restOfLine treates continuation line or virtual one line
 
 restOfLine :: MonadParsec Char T.Text m => m T.Text
-restOfLine = T.pack <$> manyTill printChar endOfLine
+restOfLine = T.pack <$> (lexeme $ manyTill printChar endOfLine)
 
 restOfLine' :: MonadParsec Char T.Text m => m T.Text
 restOfLine' = do
-  (ss, r) <-  manyTill_ printChar endOfLine
+  (ss, r) <-  lexeme $ manyTill_ printChar endOfLine
   return $ T.append (T.pack ss) r
 
 

@@ -267,7 +267,7 @@ spec = do
         `shouldBe`  (Right (Grouping Group "A" [[ArrowDef (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing)]]))
       it "alt else" $ P.parse declGrouping "" "alt a\nA->B: A -> B\nelse\nB->C: B-> C\nend alt\n"
         `shouldBe` ( Right (Grouping Alt "a" [[ArrowDef (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " A -> B"))],[ArrowDef (Arrow (Just (Nq "B")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "C"))) (Just " B-> C"))]]))
-      it "opt else else" $ P.parse declGrouping "" "opt a\nA->B: A -> B\nelse\nB->C: B-> C\nelse C->D: C -> D\nend opt\n"
+      it "opt else else" $ P.parse declGrouping "" "opt a\nA->B: A -> B\nelse\nB->C: B-> C\nelse abc\nC->D: C -> D\nend opt\n"
         `shouldBe` (Right (Grouping Opt "a" [[ArrowDef (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " A -> B"))],[ArrowDef (Arrow (Just (Nq "B")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "C"))) (Just " B-> C"))],[ArrowDef (Arrow (Just (Nq "C")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "D"))) (Just " C -> D"))]]))
 
     describe "command" $ do
