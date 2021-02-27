@@ -67,6 +67,7 @@ data Declaration where
   GroupingDef   :: Grouping   -> Declaration
   CommandDef    :: Command    -> Declaration
   BoxDef        :: Box        -> Declaration
+  AnchorDef     :: Anchor     -> Declaration
   deriving (Eq, Show)
 
 data Stereotype where
@@ -101,6 +102,10 @@ data Box where
   Box :: Maybe Name -> Maybe Color -> [Declaration] -> Box
   deriving (Eq, Show)
 
+data Anchor where
+  Anchor :: T.Text -> [Declaration] -> Anchor
+  deriving (Eq, Show)
+
 data HiddenItem = FootBox | Unlinked
   deriving (Eq, Show, Enum, Bounded)
 
@@ -129,8 +134,7 @@ data Command where
   Title :: T.Text -> Command
   Divider :: T.Text -> Command
   SkinParameters :: [SkinParam] -> Command
-  Space :: Maybe Integer -> Command
-  VSpace :: Command
+  Spacer :: Maybe Integer -> Command
   deriving (Eq, Show)
 
 

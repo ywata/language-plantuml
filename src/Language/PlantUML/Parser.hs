@@ -50,44 +50,23 @@ decls = (SubjectDef    <$> declSubject)
 
 dividerParser :: MonadParsec Char T.Text m => m Command
 dividerParser = do
-  string "=="
-  r <- doubleCharRight '=' ("", "") []
-  return $ Divider r
+  r <- encloseDoubleChar '=' '=' 
+  return $ Divider (ddrop r)
 
 stereotype :: MonadParsec Char T.Text m => m Stereotype
 stereotype = do
-  string "<<"
-  r <- doubleCharRight '>' ("", "") [] 
-  return $ Stereotype r
+  r <- encloseDoubleChar '<' '>' 
+  return $ Stereotype (ddrop r)
 
+encloseDoubleChar :: MonadParsec Char T.Text m => Char -> Char -> m T.Text
+encloseDoubleChar lchar rchar = do
+  ls <- (\(l1, ls) -> T.pack (l1: ls)) <$> ((,) <$> char lchar <*> (many1 (char lchar)))
+  rs <- doubleCharRight rchar ("", "") []
+  return (T.append ls rs)
 
-stereoRight :: MonadParsec Char T.Text m => (String, T.Text) -> [T.Text] -> m T.Text
-stereoRight (tmp, mark) ts = do
-  rest <- lookAhead restOfLine
-  let len = length ts
-  if T.length rest == 0 then
-    if len > 0 then
-      return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
-    else
-      empty
-
-    else do
-      let peek = P.parse (manyTill printChar rightEnd) "" rest
-      case peek of
-        Right _ -> do
-          r <- manyTill_ printChar rightEnd
-          stereoRight r (mark : T.pack tmp  : ts)
-        Left _ -> if len > 0 then
-                     return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
-                   else
-                     return $ T.append "|" rest
-
-  where
-    rightEnd :: MonadParsec Char T.Text m => m T.Text
-    rightEnd = do
-      string ">>"
-      rs <- many (char '>')
-      return $ T.append ">>" (T.pack rs)
+ddrop :: T.Text -> T.Text
+ddrop ls = T.reverse . T.drop 2 . T.reverse $ T.drop 2 ls
+  
 
 doubleCharRight :: MonadParsec Char T.Text m => Char -> (String, T.Text) -> [T.Text] -> m T.Text
 doubleCharRight ch (tmp, mark) ts = do
@@ -95,7 +74,7 @@ doubleCharRight ch (tmp, mark) ts = do
   let len = length ts
   if T.length rest == 0 then
     if len > 0 then
-      return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
+      return $ T.concat (reverse (mark : T.pack tmp : ts))
     else
       empty
 
@@ -104,9 +83,9 @@ doubleCharRight ch (tmp, mark) ts = do
       case peek of
         Right _ -> do
           r <- manyTill_ printChar rightEnd
-          stereoRight r (mark : T.pack tmp  : ts)
+          doubleCharRight ch r (mark : T.pack tmp  : ts)
         Left _ -> if len > 0 then
-                     return $ T.concat (reverse (T.drop 2 mark : T.pack tmp : ts))
+                     return $ T.concat (reverse (mark : T.pack tmp : ts))
                    else
                      return $ T.append "|" rest
 
@@ -118,9 +97,9 @@ doubleCharRight ch (tmp, mark) ts = do
       rs <- many (char ch)
       return $ T.append doubleChars (T.pack rs)
       
-spaceParser :: MonadParsec Char T.Text m => m Command
-spaceParser = try (Space <$> (string "|" *> many1 (char '|') *> optional L.decimal <* lexeme (many1 (char '|'))))
-              <|> (Space <$> (string "||" *> lexeme (many1 (char '|')) *> pure Nothing))
+spacerParser :: MonadParsec Char T.Text m => m Command
+spacerParser = try (Spacer <$> (string "|" *> many1 (char '|') *> optional L.decimal <* lexeme (many1 (char '|'))))
+              <|> (Spacer <$> (string "||" *> lexeme (many1 (char '|')) *> pure Nothing))
   
 
 declSubject :: MonadParsec Char T.Text m => m Subject
@@ -420,6 +399,12 @@ declBox = do
   ds <- manyTill declaration (end "box")
   return $ Box n c ds
 
+{-
+declAnchor :: MonadParsec Char T.Text m => m Anchor
+declAnchor = do
+  txt <- between (string "{") (string "}") (lexeme empty)
+  return $ Anchor txt
+-}
     
 doubleLabels :: MonadParsec Char T.Text m => m (T.Text, T.Text)
 doubleLabels = return ("not yet", "implemented")
@@ -433,7 +418,7 @@ declCommand = assocParser commandAssoc
               <|> delayParser
               <|> titleParser
               <|> dividerParser
-              <|> spaceParser
+              <|> spacerParser
               <|> try skinParametersParser
               <|> try skinParamParser
 

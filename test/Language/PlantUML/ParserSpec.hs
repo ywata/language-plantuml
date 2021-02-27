@@ -22,6 +22,7 @@ import Language.PlantUML.Parser
       declNotes,
       declGrouping,
       declCommand,
+      doubleCharRight,
       name, 
       skinParamAssoc,
       skinParamParser,
@@ -68,6 +69,10 @@ spec = do
       
       it "works after alias" $ P.parse (P.lexeme reservedAs *> string "string") "" "as abc string" `shouldBe` (Right "string")
       it "use alias" $ P.parseMaybe reservedAs "" `shouldBe` Nothing
+
+    describe "doubleCharRigth" $ do
+      it "doubleChar 1" $ P.parse (doubleCharRight '>' ("", "") []) "" "> >>>>\n"
+        `shouldBe` (Right "> >>>>")
 
     describe "space + reservedAs" $ do
       it "use alias" $ P.parse (try $ P.spaceConsumer *> reservedAs) "" " as abc" `shouldBe` (Right  (Nq "abc"))
@@ -135,27 +140,27 @@ spec = do
     describe "stereotype" $ do
       it "no >>" $ P.parseMaybe stereotype  "<<first\n"
         `shouldBe` Nothing
-      it "no >>" $ P.parseMaybe stereotype  "<<first>\n"
+      it "end with >" $ P.parseMaybe stereotype  "<<first>\n"
         `shouldBe` Nothing
       
-      it "one >>" $ P.parse stereotype "" "<<first>>\n"
+      it "<<first>>" $ P.parse stereotype "" "<<first>>\n"
         `shouldBe` (Right (Stereotype "first"))
-      it "one >>" $ P.parse stereotype "" "<<first>> \n"
+      it "<<first >> " $ P.parse stereotype "" "<<first>> \n"
         `shouldBe` (Right (Stereotype "first"))
-      it "one >>" $ P.parse stereotype "" "<<first>>>\n"
+      it "<<first>>>" $ P.parse stereotype "" "<<first>>>\n"
         `shouldBe` (Right (Stereotype "first>"))
-      it "one >>" $ P.parse stereotype "" "<<first>>> \n"
+      it "<<first>>> " $ P.parse stereotype "" "<<first>>> \n"
         `shouldBe` (Right (Stereotype "first>"))
         
-      it "one >>" $ P.parse stereotype "" "<<first> >>>\n"
+      it "<<first> >>>" $ P.parse stereotype "" "<<first> >>>\n"
         `shouldBe` (Right (Stereotype "first> >"))
-      it "one >>" $ P.parse stereotype "" "<<first> >>> \n"
+      it "<<first >>> " $ P.parse stereotype "" "<<first> >>> \n"
         `shouldBe` (Right (Stereotype "first> >"))
-      it "two >>" $ P.parse stereotype "" "<<first> >>> second>>\n"
+      it "<<first> >>> second>>" $ P.parse stereotype "" "<<first> >>> second>>\n"
         `shouldBe` (Right (Stereotype "first> >>> second"))
-      it "two >>" $ P.parse stereotype "" "<<first> >>> second>> \n"
+      it "<<first> >>> second>> " $ P.parse stereotype "" "<<first> >>> second>> \n"
         `shouldBe` (Right (Stereotype "first> >>> second"))
-      it "two >>" $ P.parse stereotype "" "<<first> >>> second>>>\n"
+      it "<<first >>> second>>>" $ P.parse stereotype "" "<<first> >>> second>>>\n"
         `shouldBe` (Right (Stereotype "first> >>> second>"))
 
       
@@ -265,6 +270,7 @@ spec = do
       it "note left multi" $ P.parse declNotes "" ("note left \nright1\nend note\n")
         `shouldBe` (Right (NoteLeft Note Nothing Nothing ["", "right1"]))
 
+
 {-
     describe "doubleLabels" $ do
       it "one label" $ do
@@ -335,20 +341,20 @@ spec = do
       it "divider normal" $ P.parse declCommand "" ("== normal ==\n")
         `shouldBe` (Right (Divider " normal "))
       it "divider ==" $ P.parse declCommand "" ("=== === = ===\n")
-        `shouldBe` (Right (Divider " === = ="))
+        `shouldBe` (Right (Divider "= === = ="))
         
       it "space |||" $ P.parse declCommand "" ("|||\n")
-        `shouldBe` (Right (Space Nothing))
+        `shouldBe` (Right (Spacer Nothing))
       it "space |||" $ P.parse declCommand "" ("||||\n")
-        `shouldBe` (Right (Space Nothing))
+        `shouldBe` (Right (Spacer Nothing))
       it "space |||| " $ P.parse declCommand "" ("|||| \n")
-        `shouldBe` (Right (Space Nothing))
+        `shouldBe` (Right (Spacer Nothing))
       it "space ||40|" $ P.parse declCommand "" ("||40|\n")
-        `shouldBe` (Right (Space (Just 40)))
+        `shouldBe` (Right (Spacer (Just 40)))
       it "space ||50||" $ P.parse declCommand "" ("||50||\n")
-        `shouldBe` (Right (Space (Just 50)))
+        `shouldBe` (Right (Spacer (Just 50)))
       it "space |||60| " $ P.parse declCommand "" ("|||60| \n")
-        `shouldBe` (Right (Space (Just 60)))        
+        `shouldBe` (Right (Spacer (Just 60)))        
 
         
     describe "end" $ do
