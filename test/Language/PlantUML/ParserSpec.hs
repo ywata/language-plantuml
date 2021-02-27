@@ -187,10 +187,16 @@ spec = do
         (Right (Arrow (Just (Nq "A"))
                         (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (AliasedName (Q "B") (Nq "b")))
                         (Just " message !")))
+      it "bill -> bob #005500" $ do
+        P.parse declArrow "" "bill -> bob #005500\n"
+        `shouldBe` (Right (Arrow2 (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) (HexColor "005500") Nothing))
+        
       it "bill -> bob #005500 : hello from thread 2" $ do
         P.parse declArrow "" "bill -> bob #005500 : hello from thread 2\n"
-        `shouldBe` (Right (Arrow (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) Nothing))
-
+        `shouldBe` (Right (Arrow2 (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) (HexColor "005500") (Just " hello from thread 2")))
+      it "bill -> bob #red : hello from thread 2" $ do
+        P.parse declArrow "" "bill -> bob #red : hello from thread 2\n"
+        `shouldBe` (Right (Arrow2 (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) (Color Red) (Just " hello from thread 2")))
 
     describe "return only" $ do
       it "return" $ P.parse declArrow "" "return\n" `shouldBe` (Right (Return Nothing))

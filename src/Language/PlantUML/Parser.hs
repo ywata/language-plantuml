@@ -211,7 +211,7 @@ declArrow :: MonadParsec Char T.Text m => m Arrow
 declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
             <|> try (do
                     res <- arrowHead
-                    try (arrowParser res) <|> try (arrowParser2 res) <|> try (activationArrowParser res)
+                    try (arrowParser2 res) <|> try (arrowParser res) <|> try (activationArrowParser res)
                 )
   where
     arrowHead :: MonadParsec Char T.Text m => m (Maybe Name, Arr)
@@ -223,7 +223,7 @@ declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
       
     arrowParser2 :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow
     arrowParser2 (n, ar)
-      =  Arrow <$> pure n <*> pure ar <*> ((Just . Name1 <$> name) <* color)
+      =  Arrow2 <$> pure n <*> pure ar <*> (Just . Name1 <$> name) <*> color
          <*> optional ((char ':') *> restOfLine)
     activationArrowParser :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow
     activationArrowParser (n, ar) =
@@ -260,7 +260,7 @@ checkArrow a = return a
                                     
 
 color ::  MonadParsec Char T.Text m => m Color
-color = try definedColor <|> try hexColor 
+color = lexeme (try definedColor <|> try hexColor )
   where
     hexColor :: MonadParsec Char T.Text m => m Color
     hexColor = HexColor . T.pack <$> (char '#' *> (many1 hexDigitChar))
