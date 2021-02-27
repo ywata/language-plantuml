@@ -198,6 +198,11 @@ spec = do
         P.parse declArrow "" "bill -> bob #red : hello from thread 2\n"
         `shouldBe` (Right (Arrow2 (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) (Color Red) (Just " hello from thread 2")))
 
+      it "bob -> george ** : create" $ do
+        P.parse declArrow "" "bob -> george ** : create\n"
+        `shouldBe` (Right (ActivationArrow (Just (Nq "bob")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Nq "george") Creation (Just " create")))
+
+
     describe "return only" $ do
       it "return" $ P.parse declArrow "" "return\n" `shouldBe` (Right (Return Nothing))
     describe "return with space only" $ do
@@ -210,6 +215,11 @@ spec = do
       it "<-" $ P.parse arrow "" "<-" `shouldBe` (Right (PreArr Nothing (Just "<") (Shaft (Just "-") Nothing Nothing) Nothing Nothing))
       it "->" $ P.parse arrow "" "<->" `shouldBe` (Right (PreArr Nothing (Just "<") (Shaft (Just "-") Nothing Nothing) (Just ">") Nothing))
       it "-->" $ P.parse arrow "" "-->" `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "--") Nothing Nothing) (Just ">") Nothing))
+      it "->]" $ P.parse arrow "" "->]" `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "-") Nothing Nothing) (Just ">") (Just "]")))
+      it "->0]" $ P.parse arrow "" "->o]" `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "-") Nothing Nothing) (Just ">o") (Just "]")))
+      it "[->" $ P.parse arrow "" "[->" `shouldBe` (Right (PreArr (Just "[") Nothing (Shaft (Just "-") Nothing Nothing) (Just ">") Nothing))
+      it "[->" $ P.parse arrow "" "[o->" `shouldBe` (Right (PreArr (Just "[") (Just "o")  (Shaft (Just "-") Nothing Nothing) (Just ">") Nothing))
+
       it "[#red]-->" $ P.parseMaybe arrow "[#red]-->"
         `shouldBe` Nothing
       it "-[#red]->" $ P.parse arrow "" "-[#red]->"
@@ -219,7 +229,7 @@ spec = do
       it "o--[#red]>" $ P.parse arrow "" "o--[#red]>x"
         `shouldBe` (Right (PreArr Nothing (Just "o") (Shaft (Just "--") (Just (Color Red)) Nothing) (Just ">x") Nothing))
       it "--->" $ P.parse arrow "" "--->" `shouldBe` (Right (PreArr Nothing Nothing (Shaft (Just "---") Nothing Nothing) (Just ">")Nothing))
-      it "<--->" $ P.parse arrow "" "<--->" `shouldBe` (Right (PreArr Nothing (Just "<") (Shaft (Just "---") Nothing Nothing) (Just ">") Nothing))      
+      it "<--->" $ P.parse arrow "" "<--->" `shouldBe` (Right (PreArr Nothing (Just "<") (Shaft (Just "---") Nothing Nothing) (Just ">") Nothing))
 
 
 

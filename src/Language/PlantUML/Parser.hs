@@ -211,7 +211,7 @@ declArrow :: MonadParsec Char T.Text m => m Arrow
 declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
             <|> try (do
                     res <- arrowHead
-                    try (arrowParser2 res) <|> try (arrowParser res) <|> try (activationArrowParser res)
+                    try (arrowParser res) 
                 )
   where
     arrowHead :: MonadParsec Char T.Text m => m (Maybe Name, Arr)
@@ -219,15 +219,23 @@ declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
     
     arrowParser :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow      
     arrowParser (n, ar)
-      =  Arrow <$> pure n <*> pure ar <*> optional asName <*> optional ((char ':') *> restOfLine)
+      =
+
+      try (ActivationArrow <$> pure n <*> pure ar <*> name <*> activityParser <*> (char ':' *> (Just <$> restOfLine)))
+      <|>
+      try (ActivationArrow <$> pure n <*> pure ar <*> name <*> activityParser <*> (pure Nothing))
+      <|>
+      try (Arrow2 <$> pure n <*> pure ar <*> (Just . Name1 <$> name) <*> color <*> (char ':' *> (Just <$> restOfLine)))
+      <|>
+      try (Arrow2 <$> pure n <*> pure ar <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
+      <|>
+      try (Arrow <$> pure n <*> pure ar <*> optional asName <*> ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (Arrow <$> pure n <*> pure ar <*> optional asName <*> (pure Nothing))
+
+
+
       
-    arrowParser2 :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow
-    arrowParser2 (n, ar)
-      =  Arrow2 <$> pure n <*> pure ar <*> (Just . Name1 <$> name) <*> color
-         <*> optional ((char ':') *> restOfLine)
-    activationArrowParser :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow
-    activationArrowParser (n, ar) =
-      ActivationArrow <$> pure n <*> pure ar <*> name <*> activityParser <*> (optional ((char ':') *> restOfLine))
 
 activityParser :: MonadParsec Char T.Text m => m Activity
 activityParser = choice $ map (mkp pairs) pairs
@@ -238,7 +246,7 @@ activityParser = choice $ map (mkp pairs) pairs
              ('*', pure Creation),
              ('!', pure Destruction)]
     mkp :: MonadParsec Char T.Text m => [(Char, m Activity)] -> (Char, m Activity) -> m Activity
-    mkp ps (c, m) = char  c >> many (choice . map (char . fst) $ ps) >> m
+    mkp ps (c, m) = char  c >> many (lexeme . choice . map (char . fst) $ ps) >> m
 
 
       

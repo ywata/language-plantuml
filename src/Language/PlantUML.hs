@@ -2,6 +2,7 @@ module Language.PlantUML
   (
     parsePlantUMLFile
   , parsePlantUML
+  , Activity(..)
   , AliasedName(..)
   , Arr(..)
   , AutonumberType(..)
