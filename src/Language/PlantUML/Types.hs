@@ -162,18 +162,20 @@ data SkinParam where
 
   -- Sequence diagram specific skin parameter
   ArrowColor :: Color -> SkinParam
-  ActorBorderColor :: Color -> SkinParam
+
   LifeLineBorderColor :: Color -> SkinParam
   LifeLineBackgroundColor :: Color -> SkinParam
+
+  ActorBorderColor :: Color -> SkinParam
+  ActorBackgroundColor :: Color -> SkinParam
+  ActorFontColor :: Color -> SkinParam
+  ActorFontSize :: Int -> SkinParam
+  ActorFontName :: T.Text -> SkinParam
 
   ParticipantBorderColor :: Color -> SkinParam
   ParticipantBackgroundColor :: Color -> SkinParam
   ParticipantFontName :: T.Text -> SkinParam
   ParticipantFontSize :: Int -> SkinParam
   ParticipantFontColor :: Color -> SkinParam
-
-  ActorBackgroundColor :: Color -> SkinParam
-  ActorFontColor :: Color -> SkinParam
-  ActorFontSize :: Int -> SkinParam
-  ActorFontName :: T.Text -> SkinParam
+  
   deriving (Eq, Show)
