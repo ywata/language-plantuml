@@ -22,6 +22,7 @@ module Language.PlantUML
   , Grouping(..)
   , HiddenItem(..)
   , Command(..)
+  , OnOff(..)
   , Shaft(..)
   , SkinParam(..)
   , SequenceParticipantType(..)  

@@ -179,7 +179,7 @@ arrow = do
   m <- shaft
   r <- optional (choice $ map string right')
   ro <- optional (choice $ map string options')
-  ro' <- optional (lexeme . choice $ map string rightOption')
+  ro' <- optional (choice $ map string rightOption')
   
   return $ PreArr lo' (lo <++> l) m (r <++> ro) ro'
   where
@@ -201,7 +201,7 @@ arrow = do
     norm' (Just "") = Nothing
     norm' a = a
 
-(<++>) (Just l) (Just r) = Just (T.append l  r)
+(<++>) (Just l) (Just r) = Just (T.append l r)
 (<++>) (Just l) Nothing = Just l
 (<++>) Nothing (Just r) = Just r
 (<++>) _ _ = Nothing
@@ -209,32 +209,62 @@ arrow = do
 
 declArrow :: MonadParsec Char T.Text m => m Arrow
 declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
-            <|> try (do
-                    res <- arrowHead
-                    try (arrowParser res) 
-                )
+            <|> try arrowParser 
   where
-    arrowHead :: MonadParsec Char T.Text m => m (Maybe Name, Arr)
-    arrowHead = (,) <$> optional name <*> (conv <$> lexeme arrow)
-    
-    arrowParser :: MonadParsec Char T.Text m => (Maybe Name, Arr) -> m Arrow      
-    arrowParser (n, ar)
-      =
+    arrowParser :: MonadParsec Char T.Text m => m Arrow      
+    arrowParser =
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (Arrow2 <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (Arrow2 <$> pure Nothing <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (ActivationArrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*>  ((char ':') *> (Just <$> restOfLine)))
+      <|>
+      try (ActivationArrow <$> pure Nothing <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*>  ((char ':') *> (Just <$> restOfLine)))
+      
+      <|>
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing)
+      <|>
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing)
+      <|>
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing)
+      <|>
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing)
+      <|>
+      try (Arrow2 <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> pure Nothing)
+      <|>
+      try (Arrow2 <$> pure Nothing <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> pure Nothing)
+      <|>
+      try (ActivationArrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*> pure Nothing)
+      <|>
+      try (ActivationArrow <$> pure Nothing <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*> pure Nothing)
 
-      try (ActivationArrow <$> pure n <*> pure ar <*> name <*> activityParser <*> (char ':' *> (Just <$> restOfLine)))
-      <|>
-      try (ActivationArrow <$> pure n <*> pure ar <*> name <*> activityParser <*> (pure Nothing))
-      <|>
-      try (Arrow2 <$> pure n <*> pure ar <*> (Just . Name1 <$> name) <*> color <*> (char ':' *> (Just <$> restOfLine)))
-      <|>
-      try (Arrow2 <$> pure n <*> pure ar <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
-      <|>
-      try (Arrow <$> pure n <*> pure ar <*> optional asName <*> ((char ':') *> (Just <$> restOfLine)))
-      <|>
-      try (Arrow <$> pure n <*> pure ar <*> optional asName <*> (pure Nothing))
+      
+{-            
 
 
+      <|>
 
+      <|>
+      try (ActivationArrow <$> (Just <$> name) <*> lexeme arrow <*> name <*> activityParser <*> (pure Nothing))
+      <|>
+      try (ActivationArrow <$> pure Nothing <*> lexeme arrow <*> name <*> activityParser <*> (pure Nothing))
+      <|>
+      try (Arrow2 <$> (Just <$> name) <*> lexeme arrow <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
+      <|>
+      try (Arrow2 <$> pure Nothing <*> lexeme arrow <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
+      <|>
+      try (Arrow2 <$> (Just <$> name) <*> lexeme arrow <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
+      <|>
+      try (Arrow <$> pure Nothing <*> lexeme arrow <*> optional asName <*> (pure Nothing))
+-}
       
 
 activityParser :: MonadParsec Char T.Text m => m Activity

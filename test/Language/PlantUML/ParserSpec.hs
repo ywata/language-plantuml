@@ -164,13 +164,19 @@ spec = do
 --      it "arrow" $ parse (choice parrows) "" "->" `shouldBe` (Right "->")
 
     describe "arrow" $ do
+      it "A -> " $ P.parse declArrow "" "A -> B\n "
+        `shouldBe` (Right (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
+      
+      it "A -> B" $ P.parse declArrow "" "A -> B\n "
+        `shouldBe` (Right (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
+      
       it "A -> B : a b c" $ P.parse declArrow "" "A -> B :a b c\n "
         `shouldBe` (Right (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">"))
                            (Just (Name1 (Nq "B"))) (Just "a b c")))
-      it "A->B" $ P.parse declArrow "" "A->B "
-        `shouldBe` (Right (Arrow (Just (Nq "A")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
       it "-> B" $ P.parse declArrow "" "-> B "
         `shouldBe` (Right (Arrow Nothing (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) Nothing))
+      it "[->" $ P.parse declArrow "" "[-> "
+        `shouldBe` (Right (Arrow Nothing (Arr (Just "[") (Shaft (Just "-") Nothing Nothing) (Just ">")) Nothing Nothing))
       it "-> B" $ P.parse declArrow "" "-> B : a b c\n"
         `shouldBe` (Right (Arrow Nothing (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "B"))) (Just " a b c")))
       it "A->" $ P.parse declArrow "" "A -> : a b c\n"
@@ -189,7 +195,7 @@ spec = do
                         (Just " message !")))
       it "bill -> bob #005500" $ do
         P.parse declArrow "" "bill -> bob #005500\n"
-        `shouldBe` (Right (Arrow2 (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) (HexColor "005500") Nothing))
+        `shouldBe` (Right (Arrow (Just (Nq "bill")) (Arr Nothing (Shaft (Just "-") Nothing Nothing) (Just ">")) (Just (Name1 (Nq "bob"))) Nothing))
         
       it "bill -> bob #005500 : hello from thread 2" $ do
         P.parse declArrow "" "bill -> bob #005500 : hello from thread 2\n"
