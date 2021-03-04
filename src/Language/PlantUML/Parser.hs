@@ -513,11 +513,6 @@ skinParametersParser =
 
 skinParamAssoc :: MonadParsec Char T.Text m => [(T.Text, m SkinParam)]
 skinParamAssoc = [
-    ("actorBackgroundColor", ActorBackgroundColor <$> lexeme color'),
-    ("actorFontColor", ActorFontColor <$> lexeme color'),
-    ("actorFontSize", ActorFontSize <$> lexeme L.decimal),
-    ("actorFontName", ActorFontName <$> (T.pack <$> lexeme (many1 letterChar))),
-    ("actorBorderColor", ActorBorderColor <$> lexeme color'),  
     ("arrowColor", ArrowColor <$> lexeme color'),
     ("backgroundColor", BackgroundColor <$> lexeme color'),
     ("boxPadding", BoxPadding <$> lexeme L.decimal),    
@@ -527,17 +522,28 @@ skinParamAssoc = [
     ("lifeLineBorderColor", LifeLineBorderColor <$> lexeme color'),
     ("lifeLineBackgroundColor", LifeLineBackgroundColor <$> lexeme color),
     ("maxMessageSize", MaxMessageSize <$> lexeme L.decimal),
-    ("participantBorderColor", ParticipantBorderColor <$> lexeme color'),
     ("participantPadding", ParticipantPadding <$> lexeme L.decimal),    
-    ("participantBackgroundColor", ParticipantBackgroundColor <$> lexeme color'),
-    ("participantFontName", ParticipantFontName <$> (T.pack <$> lexeme (many1 letterChar))),
-    ("participantFontSize", ParticipantFontSize <$> lexeme L.decimal),
-    ("participantFontColor", ParticipantFontColor <$> lexeme color'),
     ("responseMessageBelowArrow", ResponseMessageBelowArrow <$> assocParser boolAssoc),    
     ("roundCorner", RoundCorner <$> lexeme L.decimal),    
     ("sequenceArrowThickness",  SequenceArrowThickness <$> lexeme L.decimal),
     ("sequenceParticipant", SequenceParticipant <$> assocParser sequenceParticipantTypeAssoc),    
-    ("style", Style <$> assocParser styleTypeAssoc)
+    ("style", Style <$> assocParser styleTypeAssoc),
+
+
+    ("actorBackgroundColor", ActorBackgroundColor <$> lexeme color'),
+    ("actorBorderColor", ActorBorderColor <$> lexeme color'),      
+    ("actorFontColor", ActorFontColor <$> lexeme color'),
+    ("actorFontSize", ActorFontSize <$> lexeme L.decimal),
+    ("actorFontName", ActorFontName <$> (T.pack <$> lexeme (many1 letterChar))),
+
+
+    ("participantBackgroundColor", ParticipantBackgroundColor <$> lexeme color'),
+    ("participantBorderColor", ParticipantBorderColor <$> lexeme color'),
+    ("participantFontColor", ParticipantFontColor <$> lexeme color'),    
+    ("participantFontName", ParticipantFontName <$> (T.pack <$> lexeme (many1 letterChar))),
+    ("participantFontSize", ParticipantFontSize <$> lexeme L.decimal)
+
+
   ]
 
 
