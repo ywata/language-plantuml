@@ -1,5 +1,4 @@
 --{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
-
 import Test.Hspec
 
 import Language.PlantUML.ParserSpec
@@ -13,5 +12,6 @@ spec1 = do
   describe "Language.PlantUML.Parser" Language.PlantUML.ParserHelperSpec.spec
   describe "Language.PlantUML.Parser" Language.PlantUML.ParserSpec.spec
   describe "Language.PlantUML.Parser" Language.PlantUMLSpec.spec
+
 
 
