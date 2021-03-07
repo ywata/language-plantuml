@@ -1,12 +1,12 @@
-{-# language GADTSyntax, PatternSynonyms, OverloadedStrings #-}
+{-# language DeriveFunctor, GADTSyntax, PatternSynonyms, OverloadedStrings #-}
 module Language.PlantUML.Types where
 
 import Data.String (IsString(..))
 import qualified Data.Text as T
 
-data PlantUML where
-  PlantUML :: [Declaration] -> PlantUML
-  deriving (Eq, Show)
+data PlantUML a where
+  PlantUML :: [a] -> PlantUML a
+  deriving (Eq, Show, Functor)
 
 data Name = Q T.Text | Nq T.Text
   deriving (Eq, Show)

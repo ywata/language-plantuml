@@ -23,15 +23,15 @@ import Language.PlantUML.Types
 import Language.PlantUML.ParserHelper as P
 
 -- | Parse a whole file into a 'PlantUML' structure.
-parsePlantUMLFile :: FilePath -> IO (Either (ParseErrorBundle T.Text Char) PlantUML)
+parsePlantUMLFile :: FilePath -> IO (Either (ParseErrorBundle T.Text Char) (PlantUML Declaration))
 parsePlantUMLFile p = parsePlantUML <$> T.readFile p
 
 -- | Parse 'T.Text' into a 'PlantUML' structure.
-parsePlantUML :: T.Text -> Either (ParseErrorBundle T.Text Char) PlantUML
+parsePlantUML :: T.Text -> Either (ParseErrorBundle T.Text Char) (PlantUML Declaration)
 parsePlantUML = P.parse plantUML "" 
 
 
-plantUML :: MonadParsec Char T.Text m => m PlantUML
+plantUML :: MonadParsec Char T.Text m => m (PlantUML Declaration)
 plantUML = decls
   where
 --    decls = PlantUML <$> ((reserved "@startuml") *> declarations <* (reserved "@enduml"))
