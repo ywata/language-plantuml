@@ -5,7 +5,7 @@ import Data.String (IsString(..))
 import qualified Data.Text as T
 
 data PlantUML a where
-  PlantUML :: [a] -> PlantUML a
+  PlantUML :: a -> PlantUML a
   deriving (Eq, Show, Functor)
 
 data Name = Q T.Text | Nq T.Text
