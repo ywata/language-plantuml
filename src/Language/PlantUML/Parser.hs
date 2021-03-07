@@ -269,6 +269,11 @@ checkArrow   (Arrow n1        (PreArr lo'      lo s ro (Just _)) (Just _) txt) =
 checkArrow a@(Arrow n1     pa@(PreArr lo'      lo s ro ro')      n2       txt) =
   return $  Arrow n1          pa                                 n2       txt
 
+checkArrow   (Arrow2 (Just _)  (PreArr (Just _) lo s ro ro')      n2       c txt) = empty
+checkArrow   (Arrow2 n1        (PreArr lo'      lo s ro (Just _)) (Just _) c txt) = empty
+checkArrow a@(Arrow2 n1     pa@(PreArr lo'      lo s ro ro')      n2       c txt) =
+  return $  Arrow2 n1          pa                                 n2       c txt
+
 checkArrow   (ActivationArrow (Just _) (PreArr (Just _) lo s ro ro')      n2       co txt) = empty
 checkArrow   (ActivationArrow n1       (PreArr lo'      lo s ro (Just _)) n2 co txt) = empty
 checkArrow a@(ActivationArrow n1     pa@(PreArr lo' lo s ro ro') n2 co txt) =
