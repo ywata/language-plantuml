@@ -192,34 +192,34 @@ declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
   where
     arrowParser :: MonadParsec Char T.Text m => m Arrow      
     arrowParser =
-      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> ((char ':') *> (Just <$> restOfLine)))
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing <*> ((char ':') *> (Just <$> restOfLine)))
       <|>
-      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> ((char ':') *> (Just <$> restOfLine)))
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing <*> ((char ':') *> (Just <$> restOfLine)))
       <|>
-      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> ((char ':') *> (Just <$> restOfLine)))
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing <*> ((char ':') *> (Just <$> restOfLine)))
       <|>
-      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> ((char ':') *> (Just <$> restOfLine)))
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing <*> ((char ':') *> (Just <$> restOfLine)))
       <|>
-      try (Arrow2 <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> ((char ':') *> (Just <$> restOfLine)))
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*>  (Just <$> color) <*> ((char ':') *> (Just <$> restOfLine)))
       <|>
-      try (Arrow2 <$> pure Nothing <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> ((char ':') *> (Just <$> restOfLine)))
+      try (Arrow <$> pure Nothing <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> (Just <$> color) <*> ((char ':') *> (Just <$> restOfLine)))
       <|>
       try (ActivationArrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*>  ((char ':') *> (Just <$> restOfLine)))
       <|>
       try (ActivationArrow <$> pure Nothing <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*>  ((char ':') *> (Just <$> restOfLine)))
       
       <|>
-      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing)
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing <*> pure Nothing)
       <|>
-      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing)
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing <*> pure Nothing)
       <|>
-      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing)
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (Just <$> asName) <*> pure Nothing <*> pure Nothing)
       <|>
-      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing)
+      try (Arrow <$> pure Nothing<*> (conv <$> lexeme arrow) <*> (pure Nothing) <*> pure Nothing <*> pure Nothing)
       <|>
-      try (Arrow2 <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> pure Nothing)
+      try (Arrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> (Just <$> color) <*> pure Nothing)
       <|>
-      try (Arrow2 <$> pure Nothing <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> color <*> pure Nothing)
+      try (Arrow <$> pure Nothing <*> (conv <$> lexeme arrow) <*> (Just . Name1 <$> name) <*> (Just <$> color) <*> pure Nothing)
       <|>
       try (ActivationArrow <$> (Just <$> name) <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*> pure Nothing)
       <|>
@@ -264,15 +264,10 @@ activityParser = choice $ map (mkp pairs) pairs
 conv (PreArr lo' lo s ro ro') = Arr (lo'<++>lo) s (ro <++> ro')
 conv a = a
 
-checkArrow   (Arrow (Just _)  (PreArr (Just _) lo s ro ro')      n2       txt) = empty
-checkArrow   (Arrow n1        (PreArr lo'      lo s ro (Just _)) (Just _) txt) = empty
-checkArrow a@(Arrow n1     pa@(PreArr lo'      lo s ro ro')      n2       txt) =
-  return $  Arrow n1          pa                                 n2       txt
-
-checkArrow   (Arrow2 (Just _)  (PreArr (Just _) lo s ro ro')      n2       c txt) = empty
-checkArrow   (Arrow2 n1        (PreArr lo'      lo s ro (Just _)) (Just _) c txt) = empty
-checkArrow a@(Arrow2 n1     pa@(PreArr lo'      lo s ro ro')      n2       c txt) =
-  return $  Arrow2 n1          pa                                 n2       c txt
+checkArrow   (Arrow (Just _)  (PreArr (Just _) lo s ro ro')      n2       _ txt) = empty
+checkArrow   (Arrow n1        (PreArr lo'      lo s ro (Just _)) (Just _) _ txt) = empty
+checkArrow a@(Arrow n1     pa@(PreArr lo'      lo s ro ro')      n2       c txt) =
+  return $  Arrow n1          pa                                 n2       c txt
 
 checkArrow   (ActivationArrow (Just _) (PreArr (Just _) lo s ro ro')      n2       co txt) = empty
 checkArrow   (ActivationArrow n1       (PreArr lo'      lo s ro (Just _)) n2 co txt) = empty

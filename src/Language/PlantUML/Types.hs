@@ -44,8 +44,7 @@ data Activity = Creation |Destruction | Activation (Maybe Color) | Deactivation
 
 
 data Arrow where
-  Arrow  ::  Maybe Name -> Arr  -> Maybe AliasedName -> {- Color -> -} Maybe T.Text -> Arrow
-  Arrow2  ::  Maybe Name -> Arr  -> Maybe AliasedName -> Color -> Maybe T.Text -> Arrow  
+  Arrow  ::  Maybe Name -> Arr  -> Maybe AliasedName -> Maybe Color ->  Maybe T.Text -> Arrow
   ActivationArrow :: Maybe Name -> Arr -> Name -> Activity -> Maybe T.Text -> Arrow    
   Return :: Maybe T.Text -> Arrow
   deriving (Eq, Show)
