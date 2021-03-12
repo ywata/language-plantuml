@@ -127,14 +127,6 @@ declSubject = choice $ map pa [("participant", Subject Participant),
       return (f a s o c)
 
 
---- Arrows
-{-
-right, left, options, arrows, dashes :: [String]
-left =  ["", "<", "<<", "\\", "\\\\", "/", "//"]
-right = ["", ">", ">>", "\\", "\\\\", "/", "//"]
-options = ["", "x", "o"]
-dashes = ["-", "--"]
--}
 right', left', options', dash' :: [T.Text]
 leftOption' = ["?", "["]
 options' = ["x", "o"]
@@ -227,26 +219,6 @@ declArrow = try(Return <$> ((reserved "return") *> optional restOfLine))
       <|>
       try (ActivationArrow <$> pure Nothing <*> (conv <$> lexeme arrow) <*> name <*> activityParser <*> pure Nothing)
 
-      
-{-            
-
-
-      <|>
-
-      <|>
-      try (ActivationArrow <$> (Just <$> name) <*> lexeme arrow <*> name <*> activityParser <*> (pure Nothing))
-      <|>
-      try (ActivationArrow <$> pure Nothing <*> lexeme arrow <*> name <*> activityParser <*> (pure Nothing))
-      <|>
-      try (Arrow2 <$> (Just <$> name) <*> lexeme arrow <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
-      <|>
-      try (Arrow2 <$> pure Nothing <*> lexeme arrow <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
-      <|>
-      try (Arrow2 <$> (Just <$> name) <*> lexeme arrow <*> (Just . Name1 <$> name) <*> color <*> (pure Nothing))
-      <|>
-      try (Arrow <$> pure Nothing <*> lexeme arrow <*> optional asName <*> (pure Nothing))
--}
-      
 
 activityParser :: MonadParsec Char T.Text m => m Activity
 activityParser = choice $ map (mkp pairs) pairs
@@ -400,13 +372,6 @@ declBox = do
   c <- optional color
   ds <- manyTill declaration (end "box")
   return $ Box n c ds
-
-{-
-declAnchor :: MonadParsec Char T.Text m => m Anchor
-declAnchor = do
-  txt <- between (string "{") (string "}") (lexeme empty)
-  return $ Anchor txt
--}
     
 doubleLabels :: MonadParsec Char T.Text m => m (T.Text, T.Text)
 doubleLabels = return ("not yet", "implemented")
@@ -544,8 +509,6 @@ skinParamAssoc = [
     ("participantFontColor", ParticipantFontColor <$> lexeme color'),    
     ("participantFontName", ParticipantFontName <$> (T.pack <$> lexeme (many1 letterChar))),
     ("participantFontSize", ParticipantFontSize <$> lexeme L.decimal)
-
-
   ]
 
 
