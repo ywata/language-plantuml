@@ -23,11 +23,13 @@ import Language.PlantUML.Types
 import Language.PlantUML.ParserHelper as P
 
 -- | Parse a whole file into a 'PlantUML' structure.
-parsePlantUMLFile :: FilePath -> IO (Either (ParseErrorBundle T.Text Char) (PlantUML [Declaration]))
+parsePlantUMLFile :: FilePath -- ^ File name of PlantUML file. This function does not care about sufix.
+  -> IO (Either (ParseErrorBundle T.Text Char) (PlantUML [Declaration]))
 parsePlantUMLFile p = parsePlantUML <$> T.readFile p
 
 -- | Parse 'T.Text' into a 'PlantUML' structure.
-parsePlantUML :: T.Text -> Either (ParseErrorBundle T.Text Char) (PlantUML [Declaration])
+parsePlantUML :: T.Text -- ^ Text to be parsed.
+  -> Either (ParseErrorBundle T.Text Char) (PlantUML [Declaration])
 parsePlantUML = P.parse plantUML "" 
 
 
